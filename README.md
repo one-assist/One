@@ -8,7 +8,7 @@ One is a Python-based voice assistant designed to interpret spoken commands and 
 ## Documentation Map
 
 - [CODE_OF_CONDUCT](CODE_OF_CONDUCT.md)
-- [CONTRIBUTING](CONTRIBUTING.md))
+- [CONTRIBUTING](CONTRIBUTING.md)
 - [docs/introduction](docs/introduction.md)
 
 ## Overview
@@ -67,7 +67,7 @@ One currently supports a set of practical voice-driven actions:
 One/
 ├── docs/
 ├── database/
-├── front-end/
+├── frontend/
 ├── src/
 │   ├── ast/
 │   ├── audio/
@@ -109,7 +109,7 @@ Before starting, make sure you have:
 ### 1- Clone the project
 
   ```bash
- git clone https://github.com/alanmachadozx/One.git
+ git clone https://github.com/one-assist/One.git
  cd One
   ```
 

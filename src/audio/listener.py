@@ -6,6 +6,7 @@ Once converted, the text is processed by a Lexer/Parser/AST structure;
 within the AST, it undergoes a conditional check to determine whether it constitutes a valid command.
 """
 
+import logging
 import sounddevice as sd
 from src.commands.actions import *
 import numpy as np
@@ -110,7 +111,7 @@ def start_listerning(event_status: threading.Event):
                             if ast_root:
                                 ast_checker(ast_root)
                 except Exception: # noqa: S110
-                    pass
+                    logging.getLogger(__name__).exception("Error during audio processing pipeline")
                 finally:
                     while not state.q.empty():
                         try:
