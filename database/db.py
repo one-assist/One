@@ -96,6 +96,11 @@ def verify_task(name: str, db: DatabaseManager = db_default) -> bool:
     
     return bool(result)  # Returns True if the task exists, False otherwise
 
+def update_task_status(old_name: str, status:str, db: DatabaseManager = db_default):
+    db.execute(
+        "UPDATE status SET status = ? WHERE name = ?"
+    )
+    
 def update_task_name(old_name:str, new_name: str, db: DatabaseManager = db_default):
     db.execute(
         "UPDATE task SET name = ? WHERE name = ?", (new_name, old_name)

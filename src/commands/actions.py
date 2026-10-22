@@ -59,7 +59,7 @@ class Actions:
                 break
 
             while True:
-                new_date = ask_user("Say th new task date")
+                new_date = ask_user("Say the new task date")
                 if new_date == "skip":
                     break
 
@@ -69,6 +69,22 @@ class Actions:
                     update_task_time(new_name, formated_t)
                 else:
                     speech("The new datetime is invalid")
+
+            while True:
+                status = ask_user("Say the new task status")
+                if status == "skip":
+                    break
+
+                if TaskState(status):
+                    # pending, finished, in progress
+                    new_status = TaskState(status).value
+                    update_task_status(new_name, new_status)
+                    break
+
+                else:
+                    speech("Status not valid!")
+                    continue
+             
                     
     def view_unic_task(self, intent: str, target: str):
         task_name = ask_user("What is the name of the task you want to see?")
@@ -124,6 +140,10 @@ class Actions:
                 # pending, finished, in progress
                 status = TaskState(status).value 
                 break
+
+            else: 
+                speech("Status not valid!")
+                continue
          
         description = ask_user("What is the description of the task?")
         if description == "skip":
