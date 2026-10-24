@@ -93,6 +93,8 @@ class Actions:
 
                 update_task_description(new_name, description)
                 break
+
+            _ = history_insert(intent, new_name)
                 
     def view_unic_task(self, intent: str, target: str):
         task_name = ask_user("What is the name of the task you want to see?")
