@@ -80,23 +80,23 @@ class TestDatabase(unittest.TestCase):
         view_single_task(task_name, self.db)
 
     def test_update_task(self):
-        print("\n #############Testing update task...#############")
-        
-        assert self.db is not None
-        assert self.db_methods is not None
-        time = self.db_methods.formatDate("2027-04-10 13:50")
-        new_time = self.db_methods.formatDate("2027-06-15 14:50")
-        assert new_time  is not None
-        
-        create_task("Finish my project", time_remaining= time, description="list the objectives", db=self.db)
-
-        update_task_name("Start my project", "Project in progress", db= self.db)
-        update_task_time("Project in progress", new_date= new_time, db= self.db)
-        update_task_status("Project in progress", "in progress", db= self.db)
-        update_task_description("Project in progress", "start following the objectives", self.db)
-
-        view_tasks(self.db)
-
-   
+         print("\n #############Testing update task...#############")
+         
+         assert self.db is not None
+         assert self.db_methods is not None
+         
+         time = self.db_methods.formatDate("2027-04-10 13:50")
+         new_time = self.db_methods.formatDate("2027-06-15 14:50")
+         assert new_time  is not None
+         
+         create_task("Finish my project", time_remaining= time, description="list the objectives", db=self.db)
+ 
+         update_task_name("Finish my project", "Project in progress", db= self.db)
+         update_task_time("Project in progress", new_date= new_time, db= self.db)
+         update_task_status("Project in progress", "in progress", db= self.db)
+         update_task_description("Project in progress", "start following the objectives", self.db)
+         
+         view_tasks(self.db)
+         
 if __name__ == '__main__':
     unittest.main()

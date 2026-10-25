@@ -98,12 +98,14 @@ def verify_task(name: str, db: DatabaseManager = db_default) -> bool:
 
 def update_task_status(old_name: str, status:str, db: DatabaseManager = db_default):
     db.execute(
-        "UPDATE task SET status = ? WHERE name = ?"
+        "UPDATE task SET status = ? WHERE name = ?",
+        (status, old_name)
     )
 
-def update_task_description(old_name:str, new_description, db: DatabaseManager = db_default):
+def update_task_description(old_name:str, new_description: str, db: DatabaseManager = db_default):
     db.execute(
-        "UPDATE task SET description = ? WHERE name = ?"
+        "UPDATE task SET description = ? WHERE name = ?",
+        (new_description, old_name)
     )
     
 def update_task_name(old_name:str, new_name: str, db: DatabaseManager = db_default):

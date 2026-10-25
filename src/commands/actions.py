@@ -33,6 +33,7 @@ class Actions:
             "RESUME_MUSIC": self.resume_music,
             "DELETE_TASK": self.delete_task,
             "VIEW_SINGLE_TASK": self.view_unic_task,
+            "UPDATE_TASK": self.update_task
         }
 
         
@@ -46,6 +47,8 @@ class Actions:
         
         if verify_task(task_name):
             new_name = None
+
+            #update name
             while True:
                 new_name = ask_user("Say the new task name")
                 if new_name == "skip":
@@ -58,6 +61,7 @@ class Actions:
                 update_task_name(task_name, new_name) #old name, new name
                 break
 
+            #update datetime
             while True:
                 new_date = ask_user("Say the new task date")
                 if new_date == "skip":
@@ -70,6 +74,7 @@ class Actions:
                 else:
                     speech("The new datetime is invalid")
 
+            #update status
             while True:
                 status = ask_user("Say the new task status")
                 if status == "skip":
@@ -85,6 +90,7 @@ class Actions:
                     speech("Status not valid!")
                     continue
 
+            #update description
             while True:
                 description = ask_user("Say the new description")
 
