@@ -28,7 +28,7 @@ One/
 │   ├── commands/            # Command handler
 │   ├── lexer/               # Tokenization
 │   └── parser/              # Parser
-├── front-end/               # Frontend interface (Slint)
+├── frontend/               # Frontend interface (Slint)
 ├── database/                # Database logic
 ├── tests/                   # Unit tests
 ├── .github/workflows/       # GitHub Actions
@@ -43,7 +43,7 @@ There are several ways to contribute to the project:
 
 ### Report Bugs
 
-Before creating a bug report, check the list of [issues](https://github.com/alanmachadozx/One/issues).
+Before creating a bug report, check the list of [issues](https://github.com/one-assist/One/issues).
 
 When reporting a bug, include:
 - Your environment (OS, Python version, project version)
@@ -90,7 +90,7 @@ Contributions via pull requests are much appreciated!
 
 2. **Configure repository upstream**
    ```bash
-   git remote add upstream https://github.com/alanmachadozx/One.git
+   git remote add upstream https://github.com/one-assist/One.git
    ```
 
 3. **Create a branch**
