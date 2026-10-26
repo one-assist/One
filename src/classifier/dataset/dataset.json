@@ -40,6 +40,12 @@
    "i want to see all my tasks",
    "What are my tasks?"
  ],
+ "UPDATE_TASK":[
+   "update task",
+   "please update a task for me",
+   "i want update a task",
+   "change my task"
+ ],
  "DELETE_TASK": [
    "delete task",
    "remove task",

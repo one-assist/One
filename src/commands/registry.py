@@ -36,6 +36,10 @@ registry_commands: dict[str, CommandConfig]= {
         "raw_text": False,
         "ignore_words": []
     },
+    "UPDATE_TASK":{
+        "raw_text": False,
+        "ignore_words": []
+    },
     "DELETE_TASK": {
         "raw_text": False,
         "ignore_words": []

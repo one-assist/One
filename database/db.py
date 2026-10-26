@@ -1,10 +1,12 @@
 """Database functions and their isolated background worker."""
 
+import atexit
 from datetime import datetime
 import queue
 import sqlite3
 import threading
 from typing import Any
+
 from src.audio.speech import speech
 
 class DatabaseManager:
@@ -19,31 +21,36 @@ class DatabaseManager:
         db_file = sqlite3.connect(self.path)
         cursor = db_file.cursor()
 
-        while True:
-            request = self.requests.get()
-            if request is None:
-                break
+        try:
+            while True:
+                request = self.requests.get()
+                if request is None:
+                    self.requests.task_done()
+                    break
 
-            sql, params = request
-            try:
-                cursor.execute(sql, params)
-                if sql.strip().upper().startswith("SELECT"):
-                    self.results.put(cursor.fetchall())
-                else:
-                    db_file.commit()
-                    self.results.put(True)
-            except Exception:
-                self.results.put(False)
-            finally:
-                self.requests.task_done()
+                sql, params = request
+                try:
+                    cursor.execute(sql, params)
+                    if sql.strip().upper().startswith("SELECT"):
+                        self.results.put(cursor.fetchall())
+                    else:
+                        db_file.commit()
+                        self.results.put(True)
+                except Exception:
+                    self.results.put(False)
+                finally:
+                    self.requests.task_done()
+        finally:
+            db_file.close()
 
     def execute(self, sql: str, params: tuple[Any, ...] = ()) -> Any:
         self.requests.put((sql, params))
         return self.results.get()
 
     def close(self) -> None:
-        self.requests.put(None)
-        self.thread.join(timeout=1.0)
+        if self.thread.is_alive():
+            self.requests.put(None)
+            self.thread.join(timeout=1.0)
 
 
 # Initialize the DatabaseManager with the default path or a defined path (for tests)
@@ -52,6 +59,7 @@ def get_db_manager(path: str = "database/one.db") -> DatabaseManager:
     return database
     
 db_default = get_db_manager()
+atexit.register(db_default.close)
 
 def create_table(db: DatabaseManager = db_default):
     db.execute(
@@ -75,10 +83,15 @@ def create_task(
     status: str | None = "pending", 
     description: str | None = None,
     db: DatabaseManager = db_default):
+
+    if time_remaining:
+        clean_time = time_remaining.strftime("%Y-%m-%d %H:%M")
+    else:
+        clean_time = time_remaining
         
     db.execute(
         "INSERT INTO task(name, time_remaining, status, description) VALUES(?, ?, ?, ?)",
-        (name, time_remaining, status, description),
+        (name, clean_time, status, description),
     )
 
 def delete_task(name: str, db: DatabaseManager = db_default):
@@ -114,8 +127,13 @@ def update_task_name(old_name:str, new_name: str, db: DatabaseManager = db_defau
     )
 
 def update_task_time(name: str, new_date: datetime, db: DatabaseManager = db_default):
+    if new_date:
+        clean_time = new_date.strftime("%Y-%m-%d %H:%M")
+    else:
+        clean_time = new_date
+
     db.execute(
-        "UPDATE task SET time_remaining = ? WHERE name = ?", (new_date, name)
+        "UPDATE task SET time_remaining = ? WHERE name = ?", (clean_time, name)
     )
 def view_single_task(name: str, db: DatabaseManager = db_default):
     if not verify_task(name, db):
