@@ -21,7 +21,6 @@
    "look for",
    "search in google"
  ],
-
  "ASK_GEMINI": [
    "gemini",
    "one",
@@ -29,15 +28,31 @@
    "one ai",
    "gemini ai"
  ],
- 
+ "VIEW_SINGLE_TASK": [
+   "view task",
+   "i want to see a specific task",
+   "show me a task",
+   "displays the task"
+ ],
  "VIEW_TASKS": [
-   "view tasks",
-   "list tasks",
-   "show tasks",
-   "i want to see my tasks",
-   "show my tasks",
+   "list all my tasks",
+   "show all my tasks",
+   "i want to see all my tasks",
    "What are my tasks?"
  ],
+ "UPDATE_TASK":[
+   "update task",
+   "please update a task for me",
+   "i want update a task",
+   "change my task"
+ ],
+ "DELETE_TASK": [
+   "delete task",
+   "remove task",
+   "erase task",
+   "please, delete a task",
+   "please, remove a task"
+  ],
  
  "ADD_TASK": [
    "create new task",

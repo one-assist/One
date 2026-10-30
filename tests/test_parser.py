@@ -8,6 +8,7 @@ to execute: python -m unittest tests/test_parser.py
 """
 
 import unittest
+
 from src.parser.parser import *
 from src.lexer.scanner import *
 from src.classifier.model import *

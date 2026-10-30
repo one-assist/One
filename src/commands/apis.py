@@ -13,10 +13,11 @@ from spotipy.oauth2 import SpotifyOAuth
 
 load_dotenv()
 
-api_key = os.getenv("GEMINI_API_KEY")
-client = genai.Client(api_key=api_key)
 
 def ask_gemini(text: str, retries=3):
+    api_key = os.getenv("GEMINI_API_KEY")
+    client = genai.Client(api_key=api_key)
+
     for attempt in range(retries):
         try:
             response = client.models.generate_content(

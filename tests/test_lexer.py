@@ -8,6 +8,7 @@ to execute: python -m unittest tests/test_lexer.py
 """
 
 import unittest
+
 from src.lexer.scanner import *
 from src.lexer.token import *
 

@@ -15,20 +15,16 @@ from src.lexer.scanner import *
 from src.parser.parser import *
 from src.ast.checker import ast_checker
 from src.audio.speech import speech, transcribe_audio
-import src.state as state
+from src.state import state
 from src.classifier.model import *
+from src.config import FRAME_SIZE, SAMPLERATE, VAD_AGGRESSIVENESS
 
-vad = webrtcvad.Vad(2) #set aggressiveness mode
-
-SAMPLERATE = 16000
-FRAMEDURATION = 30 #ms
-FRAME_SIZE = int(SAMPLERATE * FRAMEDURATION/ 1000)
-         
-                        #By default, the event is false
+                         
+#By default, the event is false
 def start_listerning(event_status: threading.Event):
-    
+    vad = webrtcvad.Vad(VAD_AGGRESSIVENESS)
     speech("Welcome to One. How can I help you?")
-    is_sleeping = False
+    state.is_sleeping = False
     buffer = []
     is_recording = False
     offtime = 0
@@ -90,14 +86,14 @@ def start_listerning(event_status: threading.Event):
         
                     if text:
                         if text == "sleep":
-                            is_sleeping = True
+                            state.is_sleeping = True
                             speech("One is sleeping.")
     
                         elif text == "wake":
-                            is_sleeping = False
+                            state.is_sleeping = False
                             speech("One is awake.")
     
-                        elif not is_sleeping:
+                        elif not state.is_sleeping:
                             classifier = Classifier()
                             intent_object = classifier.get_intent(text)
                             intent = intent_object.intent

@@ -5,29 +5,34 @@ import slint
 import os
 import threading
 
-path = os.path.dirname(os.path.abspath(__file__))
-slint_path = os.path.join(path, '..', 'frontend', 'app-window.slint')
 
-#load the ui
-ui = slint.load_file(slint_path)
-app = ui.MainWindow()
+def main():
+    path = os.path.dirname(os.path.abspath(__file__))
+    slint_path = os.path.join(path, '..', 'frontend', 'app-window.slint')
 
-event_status = threading.Event()
-event_status.clear()
+    #load the ui
+    ui = slint.load_file(slint_path)
+    app = ui.MainWindow()
 
-def switch():
-    #Is called when the user toggles the program on/off
-    # If event_status is true, the clear() reverts to the default value (false)
-    if event_status.is_set():
-        event_status.clear()
-    else:
-        event_status.set()
+    event_status = threading.Event()
+    event_status.clear()
 
-app.start_program = switch
+    def switch():
+        #Is called when the user toggles the program on/off
+        # If event_status is true, the clear() reverts to the default value (false)
+        if event_status.is_set():
+            event_status.clear()
+        else:
+            event_status.set()
 
-linstener = threading.Thread(target=start_listerning, args=(event_status,))
-linstener.daemon = True
-linstener.start()
+    app.start_program = switch
 
-app.run()
+    listener = threading.Thread(target=start_listerning, args=(event_status,))
+    listener.daemon = True
+    listener.start()
 
+    app.run()
+
+
+if __name__ == "__main__":
+    main()

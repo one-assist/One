@@ -6,16 +6,17 @@ with the aim of verifying whether a specific new function is functional.
 
 to execute: python -m unittest tests/test_actions.py
 """
-
 import unittest
+
 from src.ast.checker import *
 from src.classifier.model import *
 from src.lexer.scanner import *
 
+
 class TestActions(unittest.TestCase):
 
     def test_actions(self):
-        command = "open firefox and open kitty"
+        command = "create task make a cake"
 
         print(f'command: {command}')
         classifier = Classifier()

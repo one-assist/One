@@ -5,6 +5,7 @@ This is where the link between identifying the command and executing the action 
 
 import subprocess
 import webbrowser
+from database.methods import DbMethods, TaskState
 from src.commands.apis import *
 import urllib.parse
 from src.audio.speech import *
@@ -13,6 +14,8 @@ from database.db import *
 
 class Actions:
     def __init__(self):
+        self.db_m = DbMethods()
+        create_table()
         self.router = {
             "VIEW_TASKS": self.view_task,
             "ADD_TASK": self.add_task,
@@ -28,6 +31,9 @@ class Actions:
             "DOWN_VOL": self.down_vol,
             "STOP_MUSIC": self.stop_music,
             "RESUME_MUSIC": self.resume_music,
+            "DELETE_TASK": self.delete_task,
+            "VIEW_SINGLE_TASK": self.view_unic_task,
+            "UPDATE_TASK": self.update_task
         }
 
         
@@ -36,25 +42,136 @@ class Actions:
             action = self.router[intent]
             action(intent, target)
 
+    def update_task(self, intent: str, target: str):
+        task_name = ask_user("What is the name of the task you want to update?")
+        
+        if verify_task(task_name):
+            new_name = None
+
+            #update name
+            while True:
+                new_name = ask_user("Say the new task name")
+                if new_name == "skip":
+                    new_name = task_name
+                    break
+                if verify_task(new_name):
+                    speech("Task already exists")
+                    continue
+                    
+                update_task_name(task_name, new_name) #old name, new name
+                break
+
+            #update datetime
+            while True:
+                new_date = ask_user("Say the new task date")
+                if new_date == "skip":
+                    break
+
+                formated_t = self.db_m.formatDate(new_date)
+
+                if formated_t is not None:
+                    update_task_time(new_name, formated_t)
+                else:
+                    speech("The new datetime is invalid")
+
+            #update status
+            while True:
+                status = ask_user("Say the new task status")
+                if status == "skip":
+                    break
+
+                if TaskState(status):
+                    # pending, finished, in progress
+                    new_status = TaskState(status).value
+                    update_task_status(new_name, new_status)
+                    break
+
+                else:
+                    speech("Status not valid!")
+                    continue
+
+            #update description
+            while True:
+                description = ask_user("Say the new description")
+
+                if description == "skip":
+                    break
+
+                update_task_description(new_name, description)
+                break
+
+            _ = history_insert(intent, new_name)
+                
+    def view_unic_task(self, intent: str, target: str):
+        task_name = ask_user("What is the name of the task you want to see?")
+        view_single_task(task_name)
+
+        _ = history_insert(intent, task_name)
+
+    def delete_task(self, intent: str, target: str):
+        task_name = ask_user("What is the name of the task you want to delete?")
+        
+        delete_task(task_name)
+        speech(f"Task {task_name} deleted.")
+        
+        _ = history_insert(intent, task_name)
+        
     def view_task(self, intent: str, target: str):
         view_tasks()
         _ = history_insert(intent, target)
 
     def add_task(self, intent: str, target: str):
-        time_remaining = ask_user(" Enter the time remaining")
-        if time_remaining == "skip":
-            time_remaining = None
+        name = None
+        formated_t = None
+        description = None
+        status = None
+
+        while True:
+            name = ask_user("What is the name of the task?")
+    
+            if not verify_task(name):
+                break
+            else:
+                speech(f"A task with the name {name} already exists. Please choose a different name.")
+                            
+        while True:
+            time_remaining = ask_user("What is the time remaining for the task?")
+            if time_remaining == "skip":
+                formated_t = None
+                break
+
+            formated_t = self.db_m.formatDate(time_remaining)
+
+            if formated_t is not None:
+                break
+                
+        while True:
+            status = ask_user("What is the status of the task?")
             
-        description = ask_user(" Enter the description")
+            if status == "skip":
+                status = None
+                break
+    
+            if TaskState(status):
+                # pending, finished, in progress
+                status = TaskState(status).value 
+                break
+
+            else: 
+                speech("Status not valid!")
+                continue
+         
+        description = ask_user("What is the description of the task?")
         if description == "skip":
             description = None
             
-        create_task(target, time_remaining, description)
-        speech(f"Task {target} created.")
-        _ = history_insert(intent, target)
+        create_task(name, formated_t, status, description)
+        speech(f"Task {name} created.")
+        _ = history_insert(intent, name)
 
     def view_history(self, intent: str, target: str):
-        db_query()
+        history_query()
+        speech("Showing history.")
         _ = history_insert(intent, target)
 
     def search(self, intent: str, target: str):

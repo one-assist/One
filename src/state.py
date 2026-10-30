@@ -1,6 +1,13 @@
-# Ensures that start_listening() and limited_hear() read exactly the same variables.
+"""Shared mutable runtime state for audio capture and transcription."""
 
 import queue
 
-q = queue.Queue()
-is_processing = False  # flag to indicate if the listener is currently processing
+
+class AppState:
+    def __init__(self) -> None:
+        self.q: queue.Queue[object] = queue.Queue()
+        self.is_processing: bool = False
+        self.is_sleeping: bool = False
+
+
+state = AppState()

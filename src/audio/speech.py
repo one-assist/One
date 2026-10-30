@@ -4,7 +4,7 @@ import subprocess
 from faster_whisper import WhisperModel
 import queue
 import contextlib
-import src.state as state
+from src.state import state
 import time
 
 model = WhisperModel("base.en", device= "cpu", compute_type= "int8")
@@ -57,7 +57,7 @@ def transcribe_audio(audio):
         print(text_cleaned)
 
     return text_cleaned
-
+    
 @contextlib.contextmanager
 def limited_hear():
     #clear the queue
@@ -87,4 +87,3 @@ def ask_user(ask: str) -> str:
             text = transcribe_audio(audio_chunk)
             if text:
                  return text
-

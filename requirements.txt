@@ -7,3 +7,4 @@ symspellpy
 jellyfish
 slint
 scikit-learn
+dateparser

@@ -2,9 +2,9 @@
 """
 Test cases for the Classifier model.
 """
-
 import unittest
 from src.classifier.model import * 
+
 
 class TestClassifier(unittest.TestCase):
     def test_get_intent(self):
