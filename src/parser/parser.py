@@ -5,7 +5,6 @@ The parser is where the distinction is made between elements conveying an intend
 """
 
 from src.lexer.token import Token, TokenType
-from src.commands.registry import registry_commands
 from src.classifier.model import *
 
 class CommandExpr:
@@ -50,34 +49,12 @@ class Parser:
             return True
         return False
 
-    # Clears the buffer, removing any words that should be ignored
-    # based on the current intent
-    def clear(self, buffer: list[str]):
-        clear_target: list[str] = []
-
-        if not self.intent:
-            return buffer
-            
-        ignore_words: list[str] = registry_commands[self.intent].get("ignore_words", [])
-        for i in buffer:
-            if i not in ignore_words:
-                clear_target.append(i)
-        return clear_target
-
     def define_target(self) -> str:
         buffer = self.parse()
-
-        if self.intent and registry_commands.get(self.intent):
-            raw_text = registry_commands[self.intent].get("raw_text", False)
-            
-        # If the raw_text is true in a intent, clear the target of any ignored words
-            if raw_text:
-                buffer = self.clear(buffer)
-
         target = " ".join(buffer)
+        
         return target
 
-        
     def parse(self):
         buffer: list[str] = []
 
