@@ -37,12 +37,12 @@ class Actions:
         }
 
         
-    def process(self, intent:str, target:str):
+    def process(self, intent:str):
         if intent in self.router:
             action = self.router[intent]
-            action(intent, target)
+            action(intent)
 
-    def update_task(self, intent: str, target: str):
+    def update_task(self, intent: str):
         task_name = ask_user("What is the name of the task you want to update?")
         
         if verify_task(task_name):
@@ -100,27 +100,29 @@ class Actions:
                 update_task_description(new_name, description)
                 break
 
+            speech("Task has been updated")
+
             _ = history_insert(intent, new_name)
                 
-    def view_unic_task(self, intent: str, target: str):
+    def view_unic_task(self, intent: str):
         task_name = ask_user("What is the name of the task you want to see?")
         view_single_task(task_name)
 
         _ = history_insert(intent, task_name)
 
-    def delete_task(self, intent: str, target: str):
+    def delete_task(self, intent: str):
         task_name = ask_user("What is the name of the task you want to delete?")
-        
         delete_task(task_name)
         speech(f"Task {task_name} deleted.")
         
         _ = history_insert(intent, task_name)
         
-    def view_task(self, intent: str, target: str):
+    def view_task(self, intent: str):
+        target = "all tasks"
         view_tasks()
         _ = history_insert(intent, target)
 
-    def add_task(self, intent: str, target: str):
+    def add_task(self, intent: str):
         name = None
         formated_t = None
         description = None
@@ -169,20 +171,24 @@ class Actions:
         speech(f"Task {name} created.")
         _ = history_insert(intent, name)
 
-    def view_history(self, intent: str, target: str):
+    def view_history(self, intent: str):
+        target = "view history"
         history_query()
-        speech("Showing history.")
+    
         _ = history_insert(intent, target)
 
-    def search(self, intent: str, target: str):
+    def search(self, intent: str):
+        target = ask_user("What would you like to search for?")
         formatted_content = urllib.parse.quote(target)
         url = f"https://www.google.com/search?q={formatted_content}"
         
         speech(f"Searching for {target}.")
         webbrowser.open(url)
+        
         _ = history_insert(intent, target)
 
-    def open_app(self, intent: str, target: str):
+    def open_app(self, intent: str):
+        target = ask_user("Which application would you like to open?")
         try:      
            subprocess.Popen([target])
            _ = history_insert(intent, target)
@@ -193,7 +199,8 @@ class Actions:
         else:
             speech(f"Opened {target}.")
 
-    def close_app(self, intent: str, target: str):
+    def close_app(self, intent: str):
+        target = ask_user("Which application would you like to close?")
         try:
             subprocess.Popen(["kill", target])
             _ = history_insert(intent, target)
@@ -203,16 +210,18 @@ class Actions:
         else:
             speech(f"Closed {target}.")
 
-    def ask_gemini(self, intent: str, target: str):
+    def ask_gemini(self, intent: str):
+        target = ask_user("hello, how can i help you?")
         speech("Thinking")
 
         response = ask_gemini(target)
         print(response)
         _ = history_insert(intent, target)
 
-    def play_music(self, intent: str, target: str):
+    def play_music(self, intent: str):
         subprocess.Popen(["spotify-launcher"])
 
+        target = ask_user("What would you like to hear?")
         #Captures the "play music-name" command and searches for the specific song on Spotify
         #You need Spotify for Developers and spotify-launcher.
         try:
@@ -233,29 +242,29 @@ class Actions:
         except Exception:
             speech("Failed to communicate with Spotify")
 
-    def update(self, intent: str, target: str):
+    def update(self, intent: str):
         subprocess.Popen(["sudo", "pacman", "-Syu"])
-        _ = history_insert(intent, target)
+        _ = history_insert(intent)
         speech("Update started.")
 
-    def next_music(self, intent: str, target: str):
+    def next_music(self, intent: str):
         subprocess.Popen(["playerctl", "next"])
-        _ = history_insert(intent, target)
+        _ = history_insert(intent)
 
-    def up_vol(self, intent: str, target: str):
+    def up_vol(self, intent: str):
         subprocess.Popen(["wpctl", "set-volume", "@DEFAULT_AUDIO_SINK@", "5%+"])
-        _ = history_insert(intent, target)
+        _ = history_insert(intent)
 
-    def down_vol(self, intent: str, target: str):
+    def down_vol(self, intent: str):
         subprocess.Popen(["wpctl", "set-volume", "@DEFAULT_AUDIO_SINK@", "5%-"])
-        _ = history_insert(intent, target)
+        _ = history_insert(intent)
 
-    def stop_music(self, intent: str, target: str):
+    def stop_music(self, intent: str):
         subprocess.Popen(["playerctl", "stop"])
-        _ = history_insert(intent, target)
+        _ = history_insert(intent)
 
-    def resume_music(self, intent: str, target: str):
+    def resume_music(self, intent: str):
         subprocess.Popen(["playerctl", "play"])
-        _ = history_insert(intent, target)
+        _ = history_insert(intent)
 
     

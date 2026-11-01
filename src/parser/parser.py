@@ -11,8 +11,7 @@ class CommandExpr:
         pass
 
 class SingleAction(CommandExpr):
-    def __init__(self, intent: str | None, target: str):
-        self.target: str = target
+    def __init__(self, intent: str | None):
         self.intent: str | None = intent
 
 class SequenceAction(CommandExpr):
@@ -49,12 +48,6 @@ class Parser:
             return True
         return False
 
-    def define_target(self) -> str:
-        buffer = self.parse()
-        target = " ".join(buffer)
-        
-        return target
-
     def parse(self):
         buffer: list[str] = []
 
@@ -65,7 +58,6 @@ class Parser:
         return buffer
 
     def parse_command(self) -> CommandExpr:
-        target = self.define_target()
         first_intent = self.intent
 
         while self.match("and"):
@@ -78,15 +70,14 @@ class Parser:
             classifier = Classifier()
             intent_object = classifier.get_intent(text)
             
-            if intent_object.intent == "UNKNOWN":
-                target = target + " "+ operator + " " + text
-            else:
+            if intent_object.intent != "UNKNOWN":
+        
                 self.intent = intent_object.intent
                 self.current_token = position
 
-                left = SingleAction(first_intent, target)
+                left = SingleAction(first_intent)
                 right = self.parse_command()
 
                 return SequenceAction(left, operator, right)
 
-        return SingleAction(first_intent, target)
+        return SingleAction(first_intent)

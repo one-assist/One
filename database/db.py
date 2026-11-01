@@ -163,12 +163,11 @@ def view_tasks(db: DatabaseManager = db_default):
         print(row)
 
 
-def history_insert(intent: str, target: str, db: DatabaseManager = db_default):
+def history_insert(intent: str, target: str | None = None, db: DatabaseManager = db_default):
     db.execute(
         "INSERT INTO history(intent, target) VALUES(?, ?)",
         (intent, target),
     )
-
 
 def history_query(db: DatabaseManager = db_default):
     result = db.execute("SELECT * FROM history")
