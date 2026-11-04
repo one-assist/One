@@ -33,7 +33,7 @@ class TestParser(unittest.TestCase):
             self.ast_example(node.right)
 
         if isinstance(node, SingleAction):
-            print(f"intent: {node.intent}, target: {node.target}")
+            print(f"intent: {node.intent}")
          
     # Tests the AND connector, which executes two or more separate commands.
     def test_and(self):

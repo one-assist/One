@@ -58,7 +58,12 @@ class Parser:
         return buffer
 
     def parse_command(self) -> CommandExpr:
-        first_intent = self.intent
+        buffer = self.parse()
+        text = " ".join(buffer)
+        first_intent = Classifier().get_intent(text).intent
+
+        if first_intent == "UNKNOWN":
+            first_intent = self.intent
 
         while self.match("and"):
             operator = self.previous().lexeme
@@ -66,12 +71,9 @@ class Parser:
 
             buffer = self.parse()
             text = " ".join(buffer)
-            
-            classifier = Classifier()
-            intent_object = classifier.get_intent(text)
-            
+            intent_object = Classifier().get_intent(text)
+
             if intent_object.intent != "UNKNOWN":
-        
                 self.intent = intent_object.intent
                 self.current_token = position
 

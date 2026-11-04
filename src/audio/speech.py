@@ -1,28 +1,43 @@
-from gtts import gTTS
-import os
-import subprocess
-from faster_whisper import WhisperModel
-import queue
 import contextlib
-from src.state import state
+import logging
+import os
+import queue
+import subprocess
 import time
+
+from faster_whisper import WhisperModel
+from gtts import gTTS
+
+from src.state import state
 
 model = WhisperModel("base.en", device= "cpu", compute_type= "int8")
 
 #Função para voz de resposta a comandos
 def speech(text: str):
-    tts = gTTS(text = text, lang ='en')
-    tts.save("speech.mp3")
+    filename = "speech.mp3"
 
-    _ = subprocess.run(
-        ["ffplay", "-nodisp", "-autoexit", "speech.mp3"],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        check = False
-    )
-        
-    if os.path.exists("speech.mp3"):
-        os.remove("speech.mp3")
+    try:
+        tts = gTTS(text=text, lang="en")
+        tts.save(filename)
+
+        result = subprocess.run(
+            ["ffplay", "-nodisp", "-autoexit", filename],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=False,
+        )
+        if result.returncode != 0:
+            logging.getLogger(__name__).error(
+                "ffplay failed with exit code %s: %s",
+                result.returncode,
+                result.stderr.strip(),
+            )
+    except Exception:
+        logging.getLogger(__name__).exception("Unable to synthesize or play speech")
+    finally:
+        if os.path.exists(filename):
+            os.remove(filename)
 
     time.sleep(0.4)
 

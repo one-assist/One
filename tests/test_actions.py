@@ -1,37 +1,51 @@
+"""Tests command execution without requiring microphone input or external services."""
 
-"""
-
-This file is responsible for testing the actions commands in isolation from the main code,
-with the aim of verifying whether a specific new function is functional.
-
-to execute: python -m unittest tests/test_actions.py
-"""
 import unittest
+from unittest.mock import Mock, patch
 
-from src.ast.checker import *
-from src.classifier.model import *
-from src.lexer.scanner import *
+from src.ast.checker import ast_checker
+from src.classifier.model import Classifier
+from src.lexer.scanner import Scanner
+from src.parser.parser import Parser
 
 
 class TestActions(unittest.TestCase):
+    @patch("src.commands.actions.history_insert")
+    @patch("src.commands.actions.speech")
+    @patch("src.commands.actions.create_task")
+    @patch(
+        "src.commands.actions.ask_user",
+        side_effect=[
+            "make a cake",
+            "in five days",
+            "pending",
+            "buy ingredients",
+        ],
+    )
+    def test_create_task_command(
+        self,
+        ask_user: Mock,
+        create_task: Mock,
+        _speech: Mock,
+        history_insert: Mock,
+    ) -> None:
+        command = "create task"
+        intent = Classifier().get_intent(command).intent
+        self.assertEqual(intent, "ADD_TASK")
 
-    def test_actions(self):
-        command = "create task make a cake"
-
-        print(f'command: {command}')
-        classifier = Classifier()
-        intent_object = classifier.get_intent(command)
-        intent = intent_object.intent
-        print(f'intent: {intent}')
-        
         scanner = Scanner(command)
         scanner.scan()
+        ast_root = Parser(scanner.tokens, intent).parse_command()
 
-        parser = Parser(scanner.tokens, intent)
-        ast_root = parser.parse_command()
+        ast_checker(ast_root)
 
-        if ast_root:
-            ast_checker(ast_root)
-if __name__ == '__main__':
+        self.assertEqual(ask_user.call_count, 4)
+        create_task.assert_called_once()
+        self.assertEqual(create_task.call_args.args[0], "make a cake")
+        self.assertEqual(create_task.call_args.args[2], "pending")
+        self.assertEqual(create_task.call_args.args[3], "buy ingredients")
+        history_insert.assert_called_once_with("ADD_TASK", "make a cake")
+
+
+if __name__ == "__main__":
     unittest.main()
-        

@@ -17,7 +17,7 @@ from src.ast.checker import ast_checker
 from src.audio.speech import speech, transcribe_audio
 from src.state import state
 from src.classifier.model import *
-from src.config import FRAME_SIZE, SAMPLERATE, VAD_AGGRESSIVENESS
+from src.config import FRAME_SIZE, MIN_AUDIO_FRAMES, SAMPLERATE, VAD_AGGRESSIVENESS
 
                          
 #By default, the event is false
@@ -58,7 +58,7 @@ def start_listerning(event_status: threading.Event):
                 offtime += 1
                 
                 if offtime > 15:
-                  if len(buffer) > 30: 
+                  if len(buffer) >= MIN_AUDIO_FRAMES: 
                     final_audio = np.concatenate(buffer)
                     state.q.put(final_audio)
                         
