@@ -1,17 +1,17 @@
 
 {
  "OPEN_APP": [
-   "open the",
-   "launch the",
-   "launch",
-   "start"
+   "open the app",
+   "launch a application",
+   "launch a executable",
+   "start a program"
  ],
 
  "CLOSE_APP": [
-   "close the",
-   "close",
-   "quit",
-   "exit"
+   "close the app",
+   "close a application",
+   "quit the app",
+   "exit out of the app"
  ],
 
  "SEARCH": [
@@ -19,7 +19,8 @@
    "search in web",
    "find about",
    "look for",
-   "search in google"
+   "search in google",
+   "look for in a browser"
  ],
  "ASK_GEMINI": [
    "gemini",
@@ -32,7 +33,8 @@
    "view task",
    "i want to see a specific task",
    "show me a task",
-   "displays the task"
+   "displays the task",
+   "view a single task"
  ],
  "VIEW_TASKS": [
    "list all my tasks",
@@ -44,7 +46,8 @@
    "update task",
    "please update a task for me",
    "i want update a task",
-   "change my task"
+   "change my task",
+   "edit a compromise"
  ],
  "DELETE_TASK": [
    "delete task",
@@ -57,7 +60,10 @@
  "ADD_TASK": [
    "create new task",
    "new task", 
-   "make task"
+   "make task",
+   "i want to add a task",
+   "add a task",
+   "please, make a new task"
   ],
 
   "VIEW_HISTORY": [
@@ -69,15 +75,16 @@
   ],
 
   "PLAY_MUSIC": [
-   "play music",
+   "play a music",
    "listen the music",
-   "start music",
-   "play"
+   "start a song",
+   "play a song for me",
+   "i want to listen a music"
   ],
 
   "UPDATE": [
     "update the system",
-    "update"
+    "update operating system"
   ],
 
   "NEXT_MUSIC": [
