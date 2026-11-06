@@ -1,120 +1,240 @@
-
 {
- "OPEN_APP": [
-   "open the",
-   "launch the",
-   "launch",
-   "start"
- ],
-
- "CLOSE_APP": [
-   "close the",
-   "close",
-   "quit",
-   "exit"
- ],
-
- "SEARCH": [
-   "search for",
-   "search in web",
-   "find about",
-   "look for",
-   "search in google"
- ],
- "ASK_GEMINI": [
-   "gemini",
-   "one",
-   "ai",
-   "one ai",
-   "gemini ai"
- ],
- "VIEW_SINGLE_TASK": [
-   "view task",
-   "i want to see a specific task",
-   "show me a task",
-   "displays the task"
- ],
- "VIEW_TASKS": [
-   "list all my tasks",
-   "show all my tasks",
-   "i want to see all my tasks",
-   "What are my tasks?"
- ],
- "UPDATE_TASK":[
-   "update task",
-   "please update a task for me",
-   "i want update a task",
-   "change my task"
- ],
- "DELETE_TASK": [
-   "delete task",
-   "remove task",
-   "erase task",
-   "please, delete a task",
-   "please, remove a task"
+  "OPEN_APP": [
+    "open the app",
+    "launch the application",
+    "start the program",
+    "run this application",
+    "can you open the program",
+    "please launch the app",
+    "I need to use the application",
+    "start up the software",
+    "open the desktop application",
+    "run the app for me",
+    "could you start this program",
+    "bring up the application"
   ],
- 
- "ADD_TASK": [
-   "create new task",
-   "new task", 
-   "make task"
+  "CLOSE_APP": [
+    "close the app",
+    "quit the application",
+    "exit the program",
+    "please close this application",
+    "shut the app down",
+    "I am done using this program",
+    "terminate the application",
+    "can you quit the app",
+    "close the desktop program",
+    "stop this application",
+    "exit out of the program",
+    "shut down the app"
   ],
-
+  "SEARCH": [
+    "search for information about",
+    "look this up on the internet",
+    "find information online about",
+    "search the web for",
+    "google this for me",
+    "look for this on the web",
+    "find a website about",
+    "I want to search for",
+    "can you look up",
+    "browse the internet for",
+    "find results for this query",
+    "search online"
+  ],
+  "ASK_GEMINI": [
+    "hey One, I have a question",
+    "One, can you help me with something",
+    "ask Gemini a question",
+    "I want to talk to the AI assistant",
+    "One, explain something to me",
+    "can I ask you something, One",
+    "let me ask the assistant",
+    "I need help from the AI",
+    "One, answer this question",
+    "talk with Gemini",
+    "I want to chat with the assistant",
+    "hey assistant, help me"
+  ],
+  "VIEW_SINGLE_TASK": [
+    "view a task",
+    "show me one specific task",
+    "display a particular task",
+    "I want to see a specific task",
+    "find the task named",
+    "show the details of my task",
+    "open the task called",
+    "look up one task",
+    "display the task with this name",
+    "can you show me the details for a task",
+    "view my task named",
+    "I only want to see one task"
+  ],
+  "VIEW_TASKS": [
+    "list all my tasks",
+    "show all my tasks",
+    "what tasks do I have",
+    "display my entire task list",
+    "show me everything I need to do",
+    "list every task",
+    "what is on my task list",
+    "I want to see all my tasks",
+    "give me an overview of my tasks",
+    "show my tasks",
+    "tell me all the tasks I have",
+    "display the full list of tasks"
+  ],
+  "UPDATE_TASK": [
+    "update a task",
+    "please update one of my tasks",
+    "I want to change a task",
+    "edit an existing task",
+    "modify the details of my task",
+    "change the task named",
+    "correct some task information",
+    "revise my task",
+    "I need to alter a task",
+    "change the description of a task",
+    "update the information for this task",
+    "make changes to a task"
+  ],
+  "DELETE_TASK": [
+    "delete a task",
+    "remove one of my tasks",
+    "erase this task",
+    "I want to get rid of a task",
+    "delete the task named",
+    "please remove this task from my list",
+    "discard a task",
+    "get rid of the task called",
+    "I no longer need this task",
+    "take this task off my list",
+    "remove a task permanently",
+    "can you delete this task"
+  ],
+  "ADD_TASK": [
+    "create a new task",
+    "add a task to my list",
+    "I need to make a task",
+    "please create a task for me",
+    "add something I need to do",
+    "make a new task",
+    "I want to register a task",
+    "put a new task on my list",
+    "create a task called",
+    "save a new task",
+    "add another task",
+    "I have something new to do"
+  ],
   "VIEW_HISTORY": [
-    "view history",
-    "show commands history",
-    "list my history",
-    "what did i do?",
-    "show my commands"
+    "view my history",
+    "show the command history",
+    "what commands have I used",
+    "display my recent activity",
+    "list the actions I have performed",
+    "show what I did earlier",
+    "look at my previous commands",
+    "I want to see my history",
+    "what have I asked you to do",
+    "show my past activity",
+    "display the history of commands",
+    "review my previous actions"
   ],
-
   "PLAY_MUSIC": [
-   "play music",
-   "listen the music",
-   "start music",
-   "play"
+    "play some music",
+    "start playing a song",
+    "put on some music",
+    "I want to listen to music",
+    "play a song for me",
+    "start the music",
+    "play music now",
+    "can you put on a song",
+    "turn on some music",
+    "I feel like listening to a song",
+    "start playing music",
+    "play something"
   ],
-
   "UPDATE": [
     "update the system",
-    "update"
+    "check for system updates",
+    "install the available updates",
+    "update my operating system",
+    "I want to update the computer",
+    "look for software updates",
+    "download and install system updates",
+    "upgrade the system",
+    "run the system updater",
+    "please update the OS",
+    "is there an update available for the system",
+    "keep the operating system up to date"
   ],
-
   "NEXT_MUSIC": [
-    "next music",
+    "play the next song",
+    "skip this track",
+    "go to the next song",
+    "skip to the next track",
+    "I do not want this song",
+    "move on to the next music",
+    "next track please",
+    "change to the following song",
     "skip this music",
-    "skip to next",
-    "play next music",
-    "advance to next music",
-    "advance music"
+    "play something else",
+    "advance to the next track",
+    "go forward one song"
   ],
-
   "STOP_MUSIC": [
     "stop the music",
-    "pause music",
-    "stop this music",
-    "stop music",
-    "stop playing"
+    "pause the song",
+    "stop playing music",
+    "pause the current track",
+    "turn the music off",
+    "I want the music to stop",
+    "stop this song",
+    "pause playback",
+    "can you stop the music",
+    "silence the music",
+    "halt the current song",
+    "stop the audio playback"
   ],
-
   "RESUME_MUSIC": [
-    "resume music",
-    "resume playing",
-    "resume",
-    "resume playing music"
+    "resume the music",
+    "continue playing",
+    "start the music again",
+    "unpause the song",
+    "continue the track",
+    "resume playback",
+    "keep playing the music",
+    "play the paused song again",
+    "continue where it stopped",
+    "start playing again",
+    "resume the current track",
+    "please continue the music"
   ],
-
   "UP_VOL": [
-    "up the volume",
-    "increase volume",
-    "raise volume",
-    "volume up"
+    "turn the volume up",
+    "increase the volume",
+    "make it louder",
+    "raise the audio level",
+    "turn up the sound",
+    "I can barely hear it, increase the volume",
+    "boost the volume",
+    "make the music louder",
+    "increase the sound level",
+    "volume higher please",
+    "turn the sound up",
+    "raise my computer volume"
   ],
-
   "DOWN_VOL": [
-    "down the volume",
-    "decrease volume",
-    "lower volume",
-    "volume down"
+    "turn the volume down",
+    "decrease the volume",
+    "make it quieter",
+    "lower the audio level",
+    "turn down the sound",
+    "reduce the volume",
+    "the music is too loud, lower it",
+    "decrease the sound level",
+    "make the audio softer",
+    "volume lower please",
+    "turn the sound down",
+    "reduce my computer volume"
   ]
 }
