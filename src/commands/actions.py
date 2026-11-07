@@ -3,6 +3,7 @@
 This is where the link between identifying the command and executing the action occurs.
 """
 
+import logging
 import subprocess
 import webbrowser
 from database.methods import DbMethods, TaskState
@@ -10,7 +11,7 @@ from src.commands.apis import *
 import urllib.parse
 from src.audio.speech import *
 from database.db import * 
-from src.commands.errors.err_actions import StatusError
+from src.commands.errors.err_actions import *
 
 logger = logging.getLogger(__name__)
 
@@ -82,14 +83,15 @@ class Actions:
                 if status == "skip":
                     break
 
-                if TaskState(status):
-                    # pending, finished, in progress
-                    new_status = TaskState(status).value
-                    update_task_status(new_name, new_status)
+                try:
+                    status = TaskState(status).value
+                    update_task_status(new_name, status)
                     break
-
-                else:
-                    speech("Status not valid!")
+                    
+                except ValueError:
+                    error = StatusError()
+                    logger.error("[%s] %s", error.code, error.user_message)
+                    speech(error.user_message)
                     continue
 
             #update description
@@ -157,15 +159,13 @@ class Actions:
                 break
             try:
                 # pending, finished, in progress
-                status = TaskState(status)
+                status = TaskState(status).value
                 break
                 
-            except StatusError as error:
-                logger.error(
-                    "[%s] %s", 
-                    error.code, 
-                    error.user_message
-                )
+            except ValueError:
+                error = StatusError()
+                logger.error("[%s] %s", error.code, error.user_message)
+                speech(error.user_message)
                 continue
             
         description = ask_user("What is the description of the task?")
@@ -196,25 +196,28 @@ class Actions:
         target = ask_user("Which application would you like to open?")
         try:      
            subprocess.Popen([target])
-           _ = history_insert(intent, target)
            
-        except Exception:
-            speech(f"{target} not found.")
+        except AppNotFound as error:
+            logger.error("[%s] %s", error.code, error.user_message)
+            speech(f"{target} {error.user_message}")
+            return 
             
-        else:
-            speech(f"Opened {target}.")
+        speech(f"Opened {target}.")
+        _ = history_insert(intent, target)
 
     def close_app(self, intent: str):
         target = ask_user("Which application would you like to close?")
         try:
             subprocess.Popen(["kill", target])
-            _ = history_insert(intent, target)
-            
-        except Exception:
-            speech(f"{target} not found!")
-        else:
-            speech(f"Closed {target}.")
 
+        except AppNotFound as error:
+            logger.error("[%s] %s", error.code, error.user_message)
+            speech(f"{target} {error.user_message}")
+            return
+            
+        speech(f"Closed {target}.")
+        _ = history_insert(intent, target)
+        
     def ask_gemini(self, intent: str):
         target = ask_user("hello, how can i help you?")
         speech("Thinking")

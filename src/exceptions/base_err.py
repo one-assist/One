@@ -1,4 +1,3 @@
-from src.audio.speech import speech
 import logging
 import sys
 
@@ -9,7 +8,7 @@ class OneError(Exception):
     user_message: str = "An unexpected error occurred"
 
     def __init__(self, message: str | None = None,):
-        self.message = speech(message or self.user_message)
+        self.message = message or self.user_message
         super().__init__(self.message)
 
 def setup_logging() -> None:

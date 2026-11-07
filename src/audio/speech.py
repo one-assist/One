@@ -69,7 +69,6 @@ def transcribe_audio(audio):
     
     for segment in segments:
         text_cleaned = clean_text(segment.text)
-        print(text_cleaned)
 
     return text_cleaned
     
