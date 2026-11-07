@@ -10,7 +10,9 @@ from src.commands.apis import *
 import urllib.parse
 from src.audio.speech import *
 from database.db import * 
+from src.commands.errors.err_actions import StatusError
 
+logger = logging.getLogger(__name__)
 
 class Actions:
     def __init__(self):
@@ -153,16 +155,19 @@ class Actions:
             if status == "skip":
                 status = None
                 break
-    
-            if TaskState(status):
+            try:
                 # pending, finished, in progress
-                status = TaskState(status).value 
+                status = TaskState(status)
                 break
-
-            else: 
-                speech("Status not valid!")
+                
+            except StatusError as error:
+                logger.error(
+                    "[%s] %s", 
+                    error.code, 
+                    error.user_message
+                )
                 continue
-         
+            
         description = ask_user("What is the description of the task?")
         if description == "skip":
             description = None

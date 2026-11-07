@@ -106,6 +106,7 @@ def start_listerning(event_status: threading.Event):
         
                             if ast_root:
                                 ast_checker(ast_root)
+                                
                 except Exception: # noqa: S110
                     logging.getLogger(__name__).exception("Error during audio processing pipeline")
                 finally:

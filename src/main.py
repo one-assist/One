@@ -4,9 +4,11 @@ from src.audio.listener import *
 import slint
 import os
 import threading
-
+from src.exceptions.base_err import setup_logging 
 
 def main():
+    setup_logging()
+    
     path = os.path.dirname(os.path.abspath(__file__))
     slint_path = os.path.join(path, '..', 'frontend', 'app-window.slint')
 
