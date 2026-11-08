@@ -110,9 +110,20 @@ class Actions:
                 
     def view_unic_task(self, intent: str):
         task_name = ask_user("What is the name of the task you want to see?")
-        view_single_task(task_name)
 
-        _ = history_insert(intent, task_name)
+        try:
+            result = view_single_task(task_name)
+
+            if result:
+                for row in result:
+                    print(row)
+                    
+            _ = history_insert(intent, task_name)
+        except TaskNotFoundError as error:
+            logger.error("[%s] %s", error.code, error.user_message)
+            speech(error.user_message)
+            return
+       
 
     def delete_task(self, intent: str):
         task_name = ask_user("What is the name of the task you want to delete?")
@@ -186,10 +197,15 @@ class Actions:
         target = ask_user("What would you like to search for?")
         formatted_content = urllib.parse.quote(target)
         url = f"https://www.google.com/search?q={formatted_content}"
-        
-        speech(f"Searching for {target}.")
-        webbrowser.open(url)
-        
+
+        try:
+            webbrowser.open(url)
+            speech(f"Searching for {target}.")
+            
+        except UrlError as error:
+            logger.error("[%s] %s", error.code, error.user_message)
+            speech(error.user_message)
+            
         _ = history_insert(intent, target)
 
     def open_app(self, intent: str):
@@ -247,13 +263,16 @@ class Actions:
 
                     else:
                         speech("Music not found!")
-        except Exception:
-            speech("Failed to communicate with Spotify")
+                        
+        except SpotifyError as error:
+            logger.error("[%s] %s", error.code, error.user_message)
+            speech(error.user_message)
+            return
 
     def update(self, intent: str):
         subprocess.Popen(["sudo", "pacman", "-Syu"])
-        _ = history_insert(intent)
         speech("Update started.")
+        _ = history_insert(intent)
 
     def next_music(self, intent: str):
         subprocess.Popen(["playerctl", "next"])

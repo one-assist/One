@@ -137,20 +137,14 @@ def update_task_time(name: str, new_date: datetime, db: DatabaseManager = db_def
     )
 def view_single_task(name: str, db: DatabaseManager = db_default):
     if not verify_task(name, db):
-        speech("Task not found!")
-        return
+        raise Exception(f"Task '{name}' does not exist.")
 
     result = db.execute(
         "SELECT * FROM task WHERE name = ?", 
         (name,),
     )
-    
-    if isinstance(result, Exception):
-        speech(f"Error in {result}")
-        return
 
-    for row in result:
-        print(row)
+    return result
     
 def view_tasks(db: DatabaseManager = db_default):
     result = db.execute("SELECT * FROM task")
