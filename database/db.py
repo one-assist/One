@@ -1,47 +1,67 @@
 """Database functions and their isolated background worker."""
 
 import atexit
-from datetime import datetime
 import queue
 import sqlite3
 import threading
+
 from typing import Any
-
+from datetime import datetime
 from src.audio.speech import speech
+from database.errors.err_db import *
+from concurrent.futures import Future
 
+#type alias for the result and request of a database query
+type QueryResult = list[tuple[Any, ...]] | bool 
+type Request  = tuple[
+    str, 
+    tuple[Any, ...],
+    Future[QueryResult]
+]
+    
 class DatabaseManager:
     def __init__(self, path: str) -> None:
         self.path = path
-        self.requests: queue.Queue[tuple[str, tuple[Any, ...]] | None] = queue.Queue()
-        self.results: queue.Queue[Any] = queue.Queue()
+        self.requests: queue.Queue[Request | None] = queue.Queue()
+        self._ready: Future[None] = Future()
+        self._lock = threading.Lock()
+        self._closed = False
         self.thread: threading.Thread = threading.Thread(target=self._run, daemon=True)
         self.thread.start()
+        self._ready.result(timeout = 10)  # Wait for the thread to be ready
 
     def _run(self) -> None:
-        db_file = sqlite3.connect(self.path)
-        cursor = db_file.cursor()
+        connection = None
 
         try:
+            connection = sqlite3.connect(self.path, timeout=5)
+            cursor = connection.cursor()
+            self._ready.set_result(None)  # Signal that the thread is ready
+
             while True:
                 request = self.requests.get()
-                if request is None:
-                    self.requests.task_done()
-                    break
-
-                sql, params = request
+                
                 try:
-                    cursor.execute(sql, params)
-                    if sql.strip().upper().startswith("SELECT"):
-                        self.results.put(cursor.fetchall())
-                    else:
-                        db_file.commit()
-                        self.results.put(True)
-                except Exception:
-                    self.results.put(False)
+                    
+                    if request is None:
+                        break
+    
+                    sql, params, future = request
+                    try:
+                        cursor.execute(sql, params)
+                        
+                        if cursor.description is not None:  # If the query returns rows
+                            result = cursor.fetchall()
+                        else:
+                            connection.commit()
+                            result = True 
+                            
+                    except Exception:
+                        self.results.put(False)
+                    finally:
+                        self.requests.task_done()
                 finally:
-                    self.requests.task_done()
-        finally:
-            db_file.close()
+                    db_file.close()
 
     def execute(self, sql: str, params: tuple[Any, ...] = ()) -> Any:
         self.requests.put((sql, params))
@@ -127,11 +147,11 @@ def update_task_name(old_name:str, new_name: str, db: DatabaseManager = db_defau
     )
 
 def update_task_time(name: str, new_date: datetime, db: DatabaseManager = db_default):
+    clean_time = None
+    
     if new_date:
         clean_time = new_date.strftime("%Y-%m-%d %H:%M")
-    else:
-        clean_time = new_date
-
+    
     db.execute(
         "UPDATE task SET time_remaining = ? WHERE name = ?", (clean_time, name)
     )
