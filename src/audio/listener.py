@@ -18,7 +18,9 @@ from src.audio.speech import speech, transcribe_audio
 from src.state import state
 from src.classifier.model import *
 from src.config import FRAME_SIZE, MIN_AUDIO_FRAMES, SAMPLERATE, VAD_AGGRESSIVENESS
+from src.audio.errors.err_listener import *
 
+logger = logging.getLogger(__name__)
                          
 #By default, the event is false
 def start_listerning(event_status: threading.Event):
@@ -107,8 +109,10 @@ def start_listerning(event_status: threading.Event):
                             if ast_root:
                                 ast_checker(ast_root)
                                 
-                except Exception: # noqa: S110
-                    logging.getLogger(__name__).exception("Error during audio processing pipeline")
+                except ListenerError as e:
+                    logger.error("[%s] %s", e.code, e.user_message)
+                    speech("An error occurred while processing the audio.")
+                    
                 finally:
                     while not state.q.empty():
                         try:

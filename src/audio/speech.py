@@ -7,9 +7,10 @@ import time
 
 from faster_whisper import WhisperModel
 from gtts import gTTS
-
 from src.state import state
+from src.audio.errors.err_speech import *
 
+logger = logging.getLogger(__name__)
 model = WhisperModel("base.en", device= "cpu", compute_type= "int8")
 
 #Função para voz de resposta a comandos
@@ -33,8 +34,9 @@ def speech(text: str):
                 result.returncode,
                 result.stderr.strip(),
             )
-    except Exception:
-        logging.getLogger(__name__).exception("Unable to synthesize or play speech")
+    except SpeechError as error:
+        logger.error("[%s] %s", error.code, error.user_message)
+        
     finally:
         if os.path.exists(filename):
             os.remove(filename)

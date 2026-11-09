@@ -3,16 +3,19 @@
 This module contains the APIs for interacting with the Gemini and Spotify APIs.
 """
 
+import os 
+import spotipy
 import time
+import logging
+
 from google import genai
 from google.genai.errors import APIError
 from dotenv import load_dotenv
-import os 
-import spotipy
 from spotipy.oauth2 import SpotifyOAuth
+from src.commands.errors.err_apis import *
 
-load_dotenv()
-
+_ = load_dotenv()
+logger = logging.getLogger(__name__)
 
 def ask_gemini(text: str, retries=3):
     api_key = os.getenv("GEMINI_API_KEY")
@@ -25,6 +28,7 @@ def ask_gemini(text: str, retries=3):
                 contents=text,
             )
             return response.text
+            
         except APIError as e:
             if e.code == 503 and attempt < retries - 1:
                 time.sleep(2 ** attempt)
@@ -33,8 +37,8 @@ def ask_gemini(text: str, retries=3):
             print(f"Gemini API error: {e}")
             return "Gemini server error"
 
-        except Exception as e:
-            print(f"Unexpected error:{e}")
+        except GeminiError as error:
+            logger.error("[%s] %s", error.code, error.user_message)
             return "Gemini server error"
             
 sp = spotipy.Spotify(auth_manager= SpotifyOAuth(
