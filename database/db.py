@@ -4,12 +4,15 @@ import atexit
 import queue
 import sqlite3
 import threading
+import logging
 
 from typing import Any
 from datetime import datetime
 from src.audio.speech import speech
 from database.errors.err_db import *
 from concurrent.futures import Future
+
+logger = logging.getLogger(__name__)
 
 #type alias for the result and request of a database query
 type QueryResult = list[tuple[Any, ...]] | bool 
@@ -55,17 +58,58 @@ class DatabaseManager:
                         else:
                             connection.commit()
                             result = True 
-                            
-                    except Exception:
-                        self.results.put(False)
-                    finally:
-                        self.requests.task_done()
-                finally:
-                    db_file.close()
 
-    def execute(self, sql: str, params: tuple[Any, ...] = ()) -> Any:
-        self.requests.put((sql, params))
-        return self.results.get()
+                    except sqlite3.Error as error:
+                        # If an error occurs, rollback the transaction and log the error
+                        connection.rollback()
+
+                        logger.exception("Database error: %s", error)
+
+                        future.set_exception(
+                            DatabaseError(f"Database error: {error}")
+                        )
+                    
+                    else:
+                        # If the query was successful, set the result of the future
+                        future.set_result(result)
+
+                finally:
+                    self.requests.task_done()
+
+        except DatabaseError as error:
+            logger.exception("Database error: %s", error)
+
+            # If an error occurs, set the exception of the future
+            if not self._ready.done():
+                self._ready.set_exception(error)
+
+            # If the thread is shutting down, set the exception of all pending requests
+            while True:
+                try:
+                    # Get all pending requests and set their exceptions
+                    pending = self.requests.get_nowait()
+
+                except queue.Empty:
+                    break
+
+                if pending is not None:
+                    _, _, future = pending
+                    future.set_exception(error)
+
+                self.requests.task_done()
+        finally:
+            if connection is not None:
+                connection.close()
+                            
+    def execute(self, sql: str, params: tuple[Any, ...] = ()) -> QueryResult:
+
+        future: Future[QueryResult] = Future()
+
+        with self._lock:
+            if self._closed:
+                raise DatabaseError("DatabaseManager is closed.")
+
+            self.requests.put((sql, params, future))
 
     def close(self) -> None:
         if self.thread.is_alive():
