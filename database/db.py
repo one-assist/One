@@ -77,7 +77,7 @@ class DatabaseManager:
                     self.requests.task_done()
 
         except DatabaseError as error:
-            logger.exception("Database error: %s", error)
+            logger.error("[%s] %s", error.code, error.user_message)
 
             # If an error occurs, set the exception of the future
             if not self._ready.done():
@@ -109,13 +109,36 @@ class DatabaseManager:
             if self._closed:
                 raise DatabaseError("DatabaseManager is closed.")
 
+            if not self.thread.is_alive():
+                raise DatabaseError(
+                    "Database worker is not running"
+                )
+                
             self.requests.put((sql, params, future))
 
-    def close(self) -> None:
-        if self.thread.is_alive():
-            self.requests.put(None)
-            self.thread.join(timeout=1.0)
+        try:
+            return future.result(timeout = 10)
 
+        except TimeoutError as error:
+            logger.error("[%s] %s", error.code, error.user_message)
+
+
+    def close(self) -> None:
+
+        with self._lock:
+            if self._closed:
+                return
+
+            self._closed = True
+            self.requests.put(None)
+
+        self.thread.join(timeout = 5)
+
+        if self.thread.is_alive():
+            raise TimeoutError(
+                "Database worker did not stop"
+            )
+ 
 
 # Initialize the DatabaseManager with the default path or a defined path (for tests)
 def get_db_manager(path: str = "database/one.db") -> DatabaseManager:
