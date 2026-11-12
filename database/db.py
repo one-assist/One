@@ -120,8 +120,9 @@ class DatabaseManager:
             return future.result(timeout = 10)
 
         except TimeoutError as error:
-            logger.error("[%s] %s", error.code, error.user_message)
-
+            raise TimeoutError(
+                logger.error("[%s] %s", error.code, error.user_message)
+            )from error
 
     def close(self) -> None:
 
@@ -149,13 +150,13 @@ db_default = get_db_manager()
 atexit.register(db_default.close)
 
 def create_table(db: DatabaseManager = db_default):
-    db.execute(
+    _ = db.execute(
         """CREATE TABLE IF NOT EXISTS history(
         id INTEGER PRIMARY KEY AUTOINCREMENT, 
         intent TEXT, 
         target TEXT)""",
     )
-    db.execute(
+    _ = db.execute(
         """CREATE TABLE IF NOT EXISTS task(
         id INTEGER PRIMARY KEY AUTOINCREMENT, 
         name TEXT, 
@@ -176,14 +177,14 @@ def create_task(
     else:
         clean_time = time_remaining
         
-    db.execute(
+    _ = db.execute(
         "INSERT INTO task(name, time_remaining, status, description) VALUES(?, ?, ?, ?)",
         (name, clean_time, status, description),
     )
 
 def delete_task(name: str, db: DatabaseManager = db_default):
     if verify_task(name, db):
-        db.execute(
+        _ = db.execute(
             "DELETE FROM task WHERE name = ?",
             (name,),
         )
@@ -197,19 +198,19 @@ def verify_task(name: str, db: DatabaseManager = db_default) -> bool:
     return bool(result)  # Returns True if the task exists, False otherwise
 
 def update_task_status(old_name: str, status:str, db: DatabaseManager = db_default):
-    db.execute(
+    _ = db.execute(
         "UPDATE task SET status = ? WHERE name = ?",
         (status, old_name)
     )
 
 def update_task_description(old_name:str, new_description: str, db: DatabaseManager = db_default):
-    db.execute(
+    _ = db.execute(
         "UPDATE task SET description = ? WHERE name = ?",
         (new_description, old_name)
     )
     
 def update_task_name(old_name:str, new_name: str, db: DatabaseManager = db_default):
-    db.execute(
+    _ =db.execute(
         "UPDATE task SET name = ? WHERE name = ?", (new_name, old_name)
     )
 
@@ -219,7 +220,7 @@ def update_task_time(name: str, new_date: datetime, db: DatabaseManager = db_def
     if new_date:
         clean_time = new_date.strftime("%Y-%m-%d %H:%M")
     
-    db.execute(
+    _ =db.execute(
         "UPDATE task SET time_remaining = ? WHERE name = ?", (clean_time, name)
     )
 def view_single_task(name: str, db: DatabaseManager = db_default):
@@ -235,28 +236,29 @@ def view_single_task(name: str, db: DatabaseManager = db_default):
     
 def view_tasks(db: DatabaseManager = db_default):
     result = db.execute("SELECT * FROM task")
-    
-    if isinstance(result, Exception):
-        speech(f"Error in {result}")
-        return
-
-    for row in result:
-        print(row)
-
+    return result
 
 def history_insert(intent: str, target: str | None = None, db: DatabaseManager = db_default):
-    db.execute(
+    _ = db.execute(
         "INSERT INTO history(intent, target) VALUES(?, ?)",
         (intent, target),
     )
 
-def history_query(db: DatabaseManager = db_default):
-    result = db.execute("SELECT * FROM history")
-    if isinstance(result, Exception):
-        speech(f"Error in {result}")
-        return
+def history_query(
+    db: DatabaseManager = db_default,
+) -> list[tuple[Any, ...]]:
+    try:
+        result = db.execute("SELECT * FROM history")
+    except DatabaseError as error:
+        logger.error("[%s] %s", error.code, error.user_message)
+        return []
+
+    if isinstance(result, bool):
+        logger.error("History query did not return rows.")
+        return []
 
     for row in result:
         print(row)
 
+    return result
 
