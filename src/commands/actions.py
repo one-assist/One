@@ -114,10 +114,6 @@ class Actions:
         try:
             result = view_single_task(task_name)
 
-            if isinstance(result, bool):
-                logger.error("History query did not return rows.")
-                return
-                
             if result:
                 for row in result:
                     print(row)
@@ -142,11 +138,6 @@ class Actions:
 
         try:
             result = view_tasks()
-    
-            if isinstance(result, bool):
-                logger.error("History query did not return rows.")
-                return
-
             if result:
                 for row in result:
                     print(row)
@@ -210,8 +201,19 @@ class Actions:
 
     def view_history(self, intent: str):
         target = "view history"
-        history_query()
-    
+
+        try:
+            result = history_query()
+
+            if result:
+                for row in result:
+                    print(row)
+
+        except HistoryQueryError as error:
+            logger.error("[%s] %s", error.code, error.user_message)
+            speech(error.user_message)
+            return
+                
         history_insert(intent, target)
 
     def search(self, intent: str):

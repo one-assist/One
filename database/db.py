@@ -231,11 +231,20 @@ def view_single_task(name: str, db: DatabaseManager = db_default):
         "SELECT * FROM task WHERE name = ?", 
         (name,),
     )
+    
+    if isinstance(result, bool):
+        logger.error("view_single_task() did not return rows.")
+        return
 
     return result
     
 def view_tasks(db: DatabaseManager = db_default):
     result = db.execute("SELECT * FROM task")
+
+    if isinstance(result, bool):
+        logger.error("view_tasks() did not return rows.")
+        return
+        
     return result
 
 def history_insert(intent: str, target: str | None = None, db: DatabaseManager = db_default):
@@ -247,18 +256,12 @@ def history_insert(intent: str, target: str | None = None, db: DatabaseManager =
 def history_query(
     db: DatabaseManager = db_default,
 ):
-    try:
-        result = db.execute("SELECT * FROM history")
+    result = db.execute("SELECT * FROM history") 
+
+    if isinstance(result, bool):
+        logger.error("history_query() did not return rows.")
+        return
         
-        if isinstance(result, bool):
-            logger.error("History query did not return rows.")
-            return []
-    
-        for row in result:
-            print(row)
-            
-    except DatabaseError as error:
-        logger.error("[%s] %s", error.code, error.user_message)
-        return 
+    return result
         
 

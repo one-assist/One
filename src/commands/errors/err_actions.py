@@ -29,3 +29,9 @@ class TaskNotFoundError(OneError):
 
     code: str = "TASK_NOT_FOUND"
     user_message: str = "The specified task could not be found."
+
+class HistoryQueryError(OneError):
+    """Raised when the history query fails."""
+
+    code: str = "HISTORY_QUERY_ERROR"
+    user_message: str = "Error in querying the history. Verify if not empty"
