@@ -20,7 +20,7 @@ class Actions:
         self.db_m = DbMethods()
         create_table()
         self.router = {
-            "VIEW_TASKS": self.view_task,
+            "VIEW_TASKS": self.view_tasks,
             "ADD_TASK": self.add_task,
             "VIEW_HISTORY": self.view_history,
             "OPEN_APP": self.open_app,
@@ -106,7 +106,7 @@ class Actions:
 
             speech("Task has been updated")
 
-            _ = history_insert(intent, new_name)
+            history_insert(intent, new_name)
                 
     def view_unic_task(self, intent: str):
         task_name = ask_user("What is the name of the task you want to see?")
@@ -114,11 +114,16 @@ class Actions:
         try:
             result = view_single_task(task_name)
 
+            if isinstance(result, bool):
+                logger.error("History query did not return rows.")
+                return
+                
             if result:
                 for row in result:
                     print(row)
                     
-            _ = history_insert(intent, task_name)
+            history_insert(intent, task_name)
+            
         except TaskNotFoundError as error:
             logger.error("[%s] %s", error.code, error.user_message)
             speech(error.user_message)
@@ -130,12 +135,28 @@ class Actions:
         delete_task(task_name)
         speech(f"Task {task_name} deleted.")
         
-        _ = history_insert(intent, task_name)
+        history_insert(intent, task_name)
         
-    def view_task(self, intent: str):
+    def view_tasks(self, intent: str):
         target = "all tasks"
-        view_tasks()
-        _ = history_insert(intent, target)
+
+        try:
+            result = view_tasks()
+    
+            if isinstance(result, bool):
+                logger.error("History query did not return rows.")
+                return
+
+            if result:
+                for row in result:
+                    print(row)
+
+            history_insert(intent, target)
+                        
+        except TaskNotFoundError as error:
+            logger.error("[%s] %s", error.code, error.user_message)
+            speech(error.user_message)
+            return
 
     def add_task(self, intent: str):
         name = None
@@ -185,13 +206,13 @@ class Actions:
             
         create_task(name, formated_t, status, description)
         speech(f"Task {name} created.")
-        _ = history_insert(intent, name)
+        history_insert(intent, name)
 
     def view_history(self, intent: str):
         target = "view history"
         history_query()
     
-        _ = history_insert(intent, target)
+        history_insert(intent, target)
 
     def search(self, intent: str):
         target = ask_user("What would you like to search for?")
@@ -206,7 +227,7 @@ class Actions:
             logger.error("[%s] %s", error.code, error.user_message)
             speech(error.user_message)
             
-        _ = history_insert(intent, target)
+        history_insert(intent, target)
 
     def open_app(self, intent: str):
         target = ask_user("Which application would you like to open?")
@@ -219,7 +240,7 @@ class Actions:
             return 
             
         speech(f"Opened {target}.")
-        _ = history_insert(intent, target)
+        history_insert(intent, target)
 
     def close_app(self, intent: str):
         target = ask_user("Which application would you like to close?")
@@ -232,7 +253,7 @@ class Actions:
             return
             
         speech(f"Closed {target}.")
-        _ = history_insert(intent, target)
+        history_insert(intent, target)
         
     def ask_gemini(self, intent: str):
         target = ask_user("hello, how can i help you?")
@@ -240,7 +261,7 @@ class Actions:
 
         response = ask_gemini(target)
         print(response)
-        _ = history_insert(intent, target)
+        history_insert(intent, target)
 
     def play_music(self, intent: str):
         subprocess.Popen(["spotify-launcher"])
@@ -259,7 +280,7 @@ class Actions:
                         music_uri = tracks[0]["uri"] #select the first track and your uri
                         sp.start_playback(uris = [music_uri])
                         speech(f"Playing {target}.")
-                        _ = history_insert(intent, target)
+                        history_insert(intent, target)
 
                     else:
                         speech("Music not found!")
@@ -272,26 +293,26 @@ class Actions:
     def update(self, intent: str):
         subprocess.Popen(["sudo", "pacman", "-Syu"])
         speech("Update started.")
-        _ = history_insert(intent)
+        history_insert(intent)
 
     def next_music(self, intent: str):
         subprocess.Popen(["playerctl", "next"])
-        _ = history_insert(intent)
+        history_insert(intent)
 
     def up_vol(self, intent: str):
         subprocess.Popen(["wpctl", "set-volume", "@DEFAULT_AUDIO_SINK@", "5%+"])
-        _ = history_insert(intent)
+        history_insert(intent)
 
     def down_vol(self, intent: str):
         subprocess.Popen(["wpctl", "set-volume", "@DEFAULT_AUDIO_SINK@", "5%-"])
-        _ = history_insert(intent)
+        history_insert(intent)
 
     def stop_music(self, intent: str):
         subprocess.Popen(["playerctl", "stop"])
-        _ = history_insert(intent)
+        history_insert(intent)
 
     def resume_music(self, intent: str):
         subprocess.Popen(["playerctl", "play"])
-        _ = history_insert(intent)
+        history_insert(intent)
 
     

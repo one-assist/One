@@ -246,19 +246,19 @@ def history_insert(intent: str, target: str | None = None, db: DatabaseManager =
 
 def history_query(
     db: DatabaseManager = db_default,
-) -> list[tuple[Any, ...]]:
+):
     try:
         result = db.execute("SELECT * FROM history")
+        
+        if isinstance(result, bool):
+            logger.error("History query did not return rows.")
+            return []
+    
+        for row in result:
+            print(row)
+            
     except DatabaseError as error:
         logger.error("[%s] %s", error.code, error.user_message)
-        return []
-
-    if isinstance(result, bool):
-        logger.error("History query did not return rows.")
-        return []
-
-    for row in result:
-        print(row)
-
-    return result
+        return 
+        
 
