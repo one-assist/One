@@ -109,8 +109,8 @@ def start_listerning(event_status: threading.Event):
                             if ast_root:
                                 ast_checker(ast_root)
                                 
-                except ListenerError as e:
-                    logger.error("[%s] %s", e.code, e.user_message)
+                except Exception:
+                    logger.exception("Error during audio processing pipeline")
                     speech("An error occurred while processing the audio.")
                     
                 finally:

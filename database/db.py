@@ -9,43 +9,57 @@ import logging
 from typing import Any
 from datetime import datetime
 from src.audio.speech import speech
-from database.errors.err_db import *
-from concurrent.futures import Future
+from concurrent.futures import Future, TimeoutError as FutureTimeoutError
+
+from database.errors.err_db import DatabaseError, DatabaseTimeoutError
+from src.commands.errors.err_actions import HistoryQueryError, TaskNotFoundError
 
 logger = logging.getLogger(__name__)
 
-#type alias for the result and request of a database query
-type QueryResult = list[tuple[Any, ...]] | bool 
-type Request  = tuple[
-    str, 
+# A SELECT returns rows; a successful write operation returns True.
+type QueryResult = list[tuple[Any, ...]] | bool
+# Every queued request carries its Future so the calling thread can await its own result.
+type Request = tuple[
+    str,
     tuple[Any, ...],
-    Future[QueryResult]
+    Future[QueryResult],
 ]
-    
+
+
 class DatabaseManager:
+    """Serialize SQLite access through one worker-owned connection."""
+
     def __init__(self, path: str) -> None:
         self.path = path
         self.requests: queue.Queue[Request | None] = queue.Queue()
         self._ready: Future[None] = Future()
         self._lock = threading.Lock()
         self._closed = False
+        # The worker owns the SQLite connection; callers communicate only through requests.
         self.thread: threading.Thread = threading.Thread(target=self._run, daemon=True)
         self.thread.start()
-        self._ready.result(timeout = 10)  # Wait for the thread to be ready
+
+        # Do not accept requests until the worker has opened its connection.
+        try:
+            self._ready.result(timeout=10)
+        except FutureTimeoutError as cause:
+            raise DatabaseTimeoutError("Database worker did not start") from cause
 
     def _run(self) -> None:
         connection = None
 
         try:
+            # A SQLite connection must remain in the thread that created it.
             connection = sqlite3.connect(self.path, timeout=5)
             cursor = connection.cursor()
-            self._ready.set_result(None)  # Signal that the thread is ready
+            self._ready.set_result(None)
 
             while True:
                 request = self.requests.get()
                 
                 try:
                     
+                    # None is the shutdown sentinel enqueued by close().
                     if request is None:
                         break
     
@@ -53,46 +67,45 @@ class DatabaseManager:
                     try:
                         cursor.execute(sql, params)
                         
-                        if cursor.description is not None:  # If the query returns rows
+                        # cursor.description is populated for SELECT-like statements.
+                        if cursor.description is not None:
                             result = cursor.fetchall()
                         else:
                             connection.commit()
                             result = True 
 
                     except sqlite3.Error as error:
-                        # If an error occurs, rollback the transaction and log the error
+                        # Keep the connection reusable after a failed write request.
                         connection.rollback()
 
-                        logger.exception("Database error: %s", error)
+                        logger.exception("Database request failed")
 
                         future.set_exception(
                             DatabaseError(f"Database error: {error}")
                         )
                     
                     else:
-                        # If the query was successful, set the result of the future
+                        # Unblock only the caller that submitted this request.
                         future.set_result(result)
 
                 finally:
                     self.requests.task_done()
 
-        except DatabaseError as error:
-            logger.error("[%s] %s", error.code, error.user_message)
+        except Exception as cause:
+            error = DatabaseError(f"Database worker failed: {cause}")
+            logger.exception("Database worker failed")
 
-            # If an error occurs, set the exception of the future
             if not self._ready.done():
                 self._ready.set_exception(error)
 
-            # If the thread is shutting down, set the exception of all pending requests
             while True:
                 try:
-                    # Get all pending requests and set their exceptions
                     pending = self.requests.get_nowait()
-
                 except queue.Empty:
                     break
 
                 if pending is not None:
+                    # A dead worker must not leave callers blocked on pending Futures.
                     _, _, future = pending
                     future.set_exception(error)
 
@@ -102,7 +115,7 @@ class DatabaseManager:
                 connection.close()
                             
     def execute(self, sql: str, params: tuple[Any, ...] = ()) -> QueryResult:
-
+        """Queue one statement and wait for the worker-owned connection to finish it."""
         future: Future[QueryResult] = Future()
 
         with self._lock:
@@ -119,13 +132,13 @@ class DatabaseManager:
         try:
             return future.result(timeout = 10)
 
-        except TimeoutError as error:
-            raise TimeoutError(
-                logger.error("[%s] %s", error.code, error.user_message)
-            )from error
+        except FutureTimeoutError as cause:
+            error = DatabaseTimeoutError()
+            logger.error("[%s] %s", error.code, error.user_message)
+            raise error from cause
 
     def close(self) -> None:
-
+        """Stop the worker after queued requests and release its SQLite connection."""
         with self._lock:
             if self._closed:
                 return
@@ -136,15 +149,12 @@ class DatabaseManager:
         self.thread.join(timeout = 5)
 
         if self.thread.is_alive():
-            raise TimeoutError(
-                "Database worker did not stop"
-            )
+            raise DatabaseTimeoutError("Database worker did not stop")
  
 
-# Initialize the DatabaseManager with the default path or a defined path (for tests)
+# Tests pass a temporary path; application code uses the default persistent database.
 def get_db_manager(path: str = "database/one.db") -> DatabaseManager:
-    database = DatabaseManager(path)
-    return database
+    return DatabaseManager(path)
     
 db_default = get_db_manager()
 atexit.register(db_default.close)
@@ -225,7 +235,7 @@ def update_task_time(name: str, new_date: datetime, db: DatabaseManager = db_def
     )
 def view_single_task(name: str, db: DatabaseManager = db_default):
     if not verify_task(name, db):
-        raise Exception(f"Task '{name}' does not exist.")
+        raise TaskNotFoundError(f"Task '{name}' does not exist.")
 
     result = db.execute(
         "SELECT * FROM task WHERE name = ?", 
@@ -255,13 +265,15 @@ def history_insert(intent: str, target: str | None = None, db: DatabaseManager =
 
 def history_query(
     db: DatabaseManager = db_default,
-):
-    result = db.execute("SELECT * FROM history") 
+) -> list[tuple[Any, ...]]:
+    try:
+        result = db.execute("SELECT * FROM history")
+    except DatabaseError as cause:
+        raise HistoryQueryError() from cause
 
     if isinstance(result, bool):
-        logger.error("history_query() did not return rows.")
-        return
-        
+        raise HistoryQueryError("History query did not return rows.")
+
     return result
         
 

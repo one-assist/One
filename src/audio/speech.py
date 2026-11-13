@@ -29,13 +29,13 @@ def speech(text: str):
             check=False,
         )
         if result.returncode != 0:
-            logging.getLogger(__name__).error(
+            logger.error(
                 "ffplay failed with exit code %s: %s",
                 result.returncode,
                 result.stderr.strip(),
             )
-    except SpeechError as error:
-        logger.error("[%s] %s", error.code, error.user_message)
+    except Exception:
+        logger.exception("Unable to synthesize or play speech")
         
     finally:
         if os.path.exists(filename):

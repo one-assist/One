@@ -222,25 +222,27 @@ class Actions:
         url = f"https://www.google.com/search?q={formatted_content}"
 
         try:
-            webbrowser.open(url)
-            speech(f"Searching for {target}.")
-            
-        except UrlError as error:
-            logger.error("[%s] %s", error.code, error.user_message)
+            if not webbrowser.open(url):
+                raise UrlError()
+        except (OSError, UrlError):
+            error = UrlError()
+            logger.exception("[%s] %s", error.code, error.user_message)
             speech(error.user_message)
-            
+            return
+
+        speech(f"Searching for {target}.")
         history_insert(intent, target)
 
     def open_app(self, intent: str):
         target = ask_user("Which application would you like to open?")
-        try:      
-           subprocess.Popen([target])
-           
-        except AppNotFound as error:
-            logger.error("[%s] %s", error.code, error.user_message)
+        try:
+            subprocess.Popen([target])
+        except OSError:
+            error = AppNotFound()
+            logger.exception("[%s] %s", error.code, error.user_message)
             speech(f"{target} {error.user_message}")
-            return 
-            
+            return
+
         speech(f"Opened {target}.")
         history_insert(intent, target)
 
@@ -248,12 +250,12 @@ class Actions:
         target = ask_user("Which application would you like to close?")
         try:
             subprocess.Popen(["kill", target])
-
-        except AppNotFound as error:
-            logger.error("[%s] %s", error.code, error.user_message)
+        except OSError:
+            error = AppNotFound()
+            logger.exception("[%s] %s", error.code, error.user_message)
             speech(f"{target} {error.user_message}")
             return
-            
+
         speech(f"Closed {target}.")
         history_insert(intent, target)
         
@@ -287,8 +289,9 @@ class Actions:
                     else:
                         speech("Music not found!")
                         
-        except SpotifyError as error:
-            logger.error("[%s] %s", error.code, error.user_message)
+        except Exception:
+            error = SpotifyError()
+            logger.exception("[%s] %s", error.code, error.user_message)
             speech(error.user_message)
             return
 

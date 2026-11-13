@@ -29,16 +29,17 @@ def ask_gemini(text: str, retries=3):
             )
             return response.text
             
-        except APIError as e:
-            if e.code == 503 and attempt < retries - 1:
+        except APIError as error:
+            if error.code == 503 and attempt < retries - 1:
                 time.sleep(2 ** attempt)
                 continue
-                
-            print(f"Gemini API error: {e}")
+
+            logger.exception("Gemini API request failed")
             return "Gemini server error"
 
-        except GeminiError as error:
-            logger.error("[%s] %s", error.code, error.user_message)
+        except Exception:
+            error = GeminiError()
+            logger.exception("[%s] %s", error.code, error.user_message)
             return "Gemini server error"
             
 sp = spotipy.Spotify(auth_manager= SpotifyOAuth(
