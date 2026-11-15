@@ -192,12 +192,15 @@ def create_task(
         (name, clean_time, status, description),
     )
 
-def delete_task(name: str, db: DatabaseManager = db_default):
+def delete_task(name: str, db: DatabaseManager = db_default) -> bool:
     if verify_task(name, db):
         _ = db.execute(
             "DELETE FROM task WHERE name = ?",
             (name,),
         )
+        return True
+
+    return False
 
 def verify_task(name: str, db: DatabaseManager = db_default) -> bool: 
     result = db.execute(

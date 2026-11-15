@@ -74,6 +74,7 @@ class Actions:
 
                 if formated_t is not None:
                     update_task_time(new_name, formated_t)
+                    break
                 else:
                     speech("The new datetime is invalid")
 
@@ -81,6 +82,7 @@ class Actions:
             while True:
                 status = ask_user("Say the new task status")
                 if status == "skip":
+                    status = TaskState.PENDING.value
                     break
 
                 try:
@@ -105,8 +107,13 @@ class Actions:
                 break
 
             speech("Task has been updated")
-
             history_insert(intent, new_name)
+            
+        else:
+            error = TaskNotFoundError()
+            logger.warning("[%s] %s", error.code, error.user_message)
+            speech(error.user_message)
+            return
                 
     def view_unic_task(self, intent: str):
         task_name = ask_user("What is the name of the task you want to see?")
@@ -128,9 +135,13 @@ class Actions:
 
     def delete_task(self, intent: str):
         task_name = ask_user("What is the name of the task you want to delete?")
-        delete_task(task_name)
-        speech(f"Task {task_name} deleted.")
-        
+        result = delete_task(task_name)
+
+        if not result: 
+            speech(f"Task {task_name} not found.")
+            return
+
+        speech(f"Task{task_name} has been deleted.")
         history_insert(intent, task_name)
         
     def view_tasks(self, intent: str):
@@ -268,12 +279,14 @@ class Actions:
         history_insert(intent, target)
 
     def play_music(self, intent: str):
-        subprocess.Popen(["spotify-launcher"])
+        
 
         target = ask_user("What would you like to hear?")
         #Captures the "play music-name" command and searches for the specific song on Spotify
         #You need Spotify for Developers and spotify-launcher.
         try:
+            subprocess.Popen(["spotify-launcher"])
+            
             if target:
                 result = sp.search(q=target, limit= 1, type="track")
 
@@ -288,7 +301,13 @@ class Actions:
 
                     else:
                         speech("Music not found!")
-                        
+
+        except OSError:
+            error = SpotifyError()
+            logger.exception("[%s] %s", error.code, error.user_message)
+            speech("Spotify is not installed or not found. Please install Spotify and try again.")
+            return
+            
         except Exception:
             error = SpotifyError()
             logger.exception("[%s] %s", error.code, error.user_message)

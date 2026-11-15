@@ -15,14 +15,13 @@ class TaskState (StrEnum):
     
 class DbMethods:
     def __init__(self) -> None:
-        # Store the current datetime for relative date parsing
-        self.now: datetime = datetime.now()
+        
         # Initialize the DateDataParser with the desired settings
         self.parser: DateDataParser = DateDataParser( 
             languages= ["en"], 
             settings= {
                 "DATE_ORDER": "MDY",
-                "RELATIVE_BASE": self.now, 
+                "RELATIVE_BASE": datetime.now(), 
                 "PREFER_DATES_FROM": "future"
         })
     
