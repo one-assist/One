@@ -19,6 +19,8 @@ ONE bridges your voice with system actions through a structured, multi-stage pip
 5. **Intent Classification & Execution:** 
    The system validates the syntax rules, matches intents, and executes the requested system or application action.
 
+If an unexpected failure occurs during transcription or command processing, ONE records the technical details in its logs, gives a short spoken error response, clears stale audio, and returns to an available listening state. External services such as Gemini also return a safe fallback response when their request cannot be completed.
+
 ---
 
 ## Exploring Command Possibilities

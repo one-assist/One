@@ -247,7 +247,7 @@ class Actions:
     def open_app(self, intent: str):
         target = ask_user("Which application would you like to open?")
         try:
-            subprocess.Popen([target])
+            _ = subprocess.Popen([target])
         except OSError:
             error = AppNotFound()
             logger.exception("[%s] %s", error.code, error.user_message)
@@ -260,7 +260,7 @@ class Actions:
     def close_app(self, intent: str):
         target = ask_user("Which application would you like to close?")
         try:
-            subprocess.Popen(["kill", target])
+            _ = subprocess.Popen(["kill", target])
         except OSError:
             error = AppNotFound()
             logger.exception("[%s] %s", error.code, error.user_message)
@@ -285,7 +285,8 @@ class Actions:
         #Captures the "play music-name" command and searches for the specific song on Spotify
         #You need Spotify for Developers and spotify-launcher.
         try:
-            subprocess.Popen(["spotify-launcher"])
+            sp = get_client()
+            _ = subprocess.Popen(["spotify-launcher"])
             
             if target:
                 result = sp.search(q=target, limit= 1, type="track")
@@ -315,28 +316,28 @@ class Actions:
             return
 
     def update(self, intent: str):
-        subprocess.Popen(["sudo", "pacman", "-Syu"])
+        _ = subprocess.Popen(["sudo", "pacman", "-Syu"])
         speech("Update started.")
         history_insert(intent)
 
     def next_music(self, intent: str):
-        subprocess.Popen(["playerctl", "next"])
+        _ = subprocess.Popen(["playerctl", "next"])
         history_insert(intent)
 
     def up_vol(self, intent: str):
-        subprocess.Popen(["wpctl", "set-volume", "@DEFAULT_AUDIO_SINK@", "5%+"])
+        _ =subprocess.Popen(["wpctl", "set-volume", "@DEFAULT_AUDIO_SINK@", "5%+"])
         history_insert(intent)
 
     def down_vol(self, intent: str):
-        subprocess.Popen(["wpctl", "set-volume", "@DEFAULT_AUDIO_SINK@", "5%-"])
+        _ = subprocess.Popen(["wpctl", "set-volume", "@DEFAULT_AUDIO_SINK@", "5%-"])
         history_insert(intent)
 
     def stop_music(self, intent: str):
-        subprocess.Popen(["playerctl", "stop"])
+        _ = subprocess.Popen(["playerctl", "stop"])
         history_insert(intent)
 
     def resume_music(self, intent: str):
-        subprocess.Popen(["playerctl", "play"])
+        _ = subprocess.Popen(["playerctl", "play"])
         history_insert(intent)
 
     

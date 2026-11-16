@@ -41,8 +41,9 @@ def ask_gemini(text: str, retries=3):
             error = GeminiError()
             logger.exception("[%s] %s", error.code, error.user_message)
             return "Gemini server error"
-            
-sp = spotipy.Spotify(auth_manager= SpotifyOAuth(
+
+def get_client():        
+    return spotipy.Spotify(auth_manager= SpotifyOAuth(
     client_id= os.getenv("SPOTIPY_CLIENT_ID"),
     client_secret= os.getenv("SPOTIPY_CLIENT_SECRET"),
     redirect_uri= os.getenv("SPOTIPY_REDIRECT_URI"),
