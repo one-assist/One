@@ -7,6 +7,9 @@ within the AST, it undergoes a conditional check to determine whether it constit
 """
 
 import logging
+import queue
+import threading
+
 import sounddevice as sd
 from src.commands.actions import *
 import numpy as np
@@ -17,7 +20,13 @@ from src.ast.checker import ast_checker
 from src.audio.speech import speech, transcribe_audio
 from src.state import state
 from src.classifier.model import *
-from src.config import FRAME_SIZE, MIN_AUDIO_FRAMES, SAMPLERATE, VAD_AGGRESSIVENESS
+from src.config import (
+    END_SILENCE_FRAMES,
+    FRAME_SIZE,
+    MIN_AUDIO_FRAMES,
+    SAMPLERATE,
+    VAD_AGGRESSIVENESS,
+)
 from src.audio.errors.err_listener import *
 
 logger = logging.getLogger(__name__)
@@ -25,6 +34,7 @@ logger = logging.getLogger(__name__)
 #By default, the event is false
 def start_listerning(event_status: threading.Event):
     vad = webrtcvad.Vad(VAD_AGGRESSIVENESS)
+    logger.info("Starting audio listener (device=%s, sample_rate=%s)", sd.default.device, SAMPLERATE)
     speech("Welcome to One. How can I help you?")
     state.is_sleeping = False
     buffer = []
@@ -36,7 +46,7 @@ def start_listerning(event_status: threading.Event):
         nonlocal is_recording, offtime
        
         if status:
-            print(status)
+            logger.warning("Audio input status: %s", status)
 
         #if the event is false, clear the buffer and return
         if not event_status.is_set() or state.is_processing:
@@ -47,9 +57,13 @@ def start_listerning(event_status: threading.Event):
             return
         
         clear_indata = indata[:, 0]
-        clear_bytes = (clear_indata * 32768).astype(np.int16).tobytes()
+        # sounddevice usually provides samples in [-1.0, 1.0], but clipping
+        # prevents an out-of-range sample from overflowing when converted to int16.
+        clear_bytes = (np.clip(clear_indata, -1.0, 1.0) * 32767).astype(np.int16).tobytes()
     
-        if vad.is_speech(clear_bytes,SAMPLERATE):
+        if vad.is_speech(clear_bytes, SAMPLERATE):
+            if not is_recording:
+                logger.info("Speech detected; recording audio")
             is_recording = True
             offtime = 0
             buffer.append(clear_indata.copy())
@@ -59,19 +73,28 @@ def start_listerning(event_status: threading.Event):
                 buffer.append(clear_indata.copy())
                 offtime += 1
                 
-                if offtime > 15:
-                  if len(buffer) >= MIN_AUDIO_FRAMES: 
-                    final_audio = np.concatenate(buffer)
-                    state.q.put(final_audio)
-                        
-                  buffer.clear()
-                  is_recording = False
-                  offtime = 0
+                if offtime > END_SILENCE_FRAMES:
+                    if len(buffer) >= MIN_AUDIO_FRAMES:
+                        final_audio = np.concatenate(buffer)
+                        state.q.put(final_audio)
+                        logger.info("Audio queued for transcription (%s frames)", len(buffer))
+                    else:
+                        logger.debug("Discarded short audio recording (%s frames)", len(buffer))
+
+                    buffer.clear()
+                    is_recording = False
+                    offtime = 0
 
     
-    with sd.InputStream(samplerate= SAMPLERATE, channels= 1, dtype = "float32", callback= callback, blocksize= FRAME_SIZE):
-
-        try:
+    try:
+        with sd.InputStream(
+            samplerate=SAMPLERATE,
+            channels=1,
+            dtype="float32",
+            callback=callback,
+            blocksize=FRAME_SIZE,
+        ):
+            logger.info("Audio input stream opened; waiting for the UI to enable listening")
             while True:
                 event_status.wait() #Blocks thread execution until event() is true
 
@@ -85,6 +108,7 @@ def start_listerning(event_status: threading.Event):
                 
                 try:
                     text = transcribe_audio(audio_chunk)
+                    logger.info("Transcription result: %r", text)
         
                     if text:
                         if text == "sleep":
@@ -121,5 +145,7 @@ def start_listerning(event_status: threading.Event):
                             break
                     state.is_processing = False
     
-        except KeyboardInterrupt:
-            speech("Program finished.")
+    except KeyboardInterrupt:
+        speech("Program finished.")
+    except Exception:
+        logger.exception("Audio listener stopped unexpectedly")
