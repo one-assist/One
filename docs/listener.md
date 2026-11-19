@@ -31,8 +31,8 @@ Here is how the logic flows inside the callback:
     * **If speech is detected**: `is_recording` is set to `True`, the silence counter (`offtime`) is reset to 0, and the frame is appended to the `buffer` list.
     * **If silence is detected**: If the system was already in the middle of recording (`is_recording == True`), it continues to append the silent frame to the buffer (to maintain natural pauses) and increments the `offtime` counter.
 - **End of Speech Detection**: If the silence `offtime` exceeds 15 frames (approx. 450ms), the system assumes the user has finished speaking. 
-    * It then checks if the overall `buffer` has more than 30 frames (to filter out very brief, accidental noises). 
-    * If valid, all frames in the buffer are concatenated into a single audio array and pushed to the Thread-Safe Queue (`state.q`).
+    * It then checks whether the overall `buffer` has at least `MIN_AUDIO_FRAMES` frames (currently 20), filtering out very brief accidental noises while allowing short answers such as task states.
+    * If valid, all frames in the buffer are concatenated into a single audio array and pushed to the thread-safe queue (`state.q`).
     * Finally, the buffer is cleared, and recording states are reset.
 
 ### The Main Processing Loop
@@ -51,4 +51,5 @@ While the `callback` handles the real-time audio gathering, the main loop in `st
     * **Lexer/Scanner**: Tokenizes the raw string into semantic tokens.
     * **Parser**: Takes the tokens and the intent to build an Abstract Syntax Tree (AST).
     * **AST Checker**: Evaluates and executes the instructions defined in the AST root.
-- **Cleanup**: In the `finally` block, the system aggressively clears any pending audio chunks that might have accumulated in `state.q` during execution. This ensures the assistant doesn't process stale or delayed audio, then it releases the lock (`state.is_processing = False`), allowing the callback to record again.
+- **Error recovery**: Unexpected errors in transcription, classification, parsing, or AST execution are recorded with a traceback and ONE provides a short spoken failure message. This prevents one failed command from terminating the processing loop.
+- **Cleanup**: In the `finally` block, the system aggressively clears any pending audio chunks that might have accumulated in `state.q` during execution. This ensures the assistant does not process stale or delayed audio, then it releases the lock (`state.is_processing = False`), allowing the callback to record again even after a processing error.

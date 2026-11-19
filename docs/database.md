@@ -10,12 +10,9 @@ This document describes the SQLite persistence layer implemented in [db.py](../d
 manager = DatabaseManager("database/one.db")
 ```
 
-The manager exposes two thread-safe queues:
+The manager exposes a thread-safe **`requests`** queue. Each request contains the SQL statement, its parameters, and a `concurrent.futures.Future` belonging to the caller.
 
-* **`requests`** receives SQL requests as `(sql, params)` tuples.
-* **`results`** delivers the result of the operation back to the caller.
-
-The public `execute()` method places a request in `requests` and waits for the corresponding item in `results`. This means callers use a simple synchronous API even though SQLite work is performed on another thread:
+The public `execute()` method places that request in the queue and waits for its own `Future`. This means callers use a simple synchronous API even though SQLite work is performed on another thread:
 
 ```python
 result = manager.execute(
@@ -24,7 +21,9 @@ result = manager.execute(
 )
 ```
 
-`SELECT` statements return `cursor.fetchall()` results. Write statements such as `CREATE`, `INSERT`, `UPDATE`, and `DELETE` are committed and return `True`. If an exception occurs in the worker, the current implementation returns `False`.
+`SELECT` statements return `cursor.fetchall()` results. Write statements such as `CREATE`, `INSERT`, `UPDATE`, and `DELETE` are committed and return `True`.
+
+SQLite errors are rolled back by the worker and propagated to the original caller as `DatabaseError`; they are not represented as a successful-looking `False` result. If the worker cannot start, a request exceeds the waiting limit, or shutdown does not finish in time, the manager raises `DatabaseTimeoutError`. If the worker fails unexpectedly, pending requests are completed with the same `DatabaseError` so callers are not left waiting indefinitely.
 
 ## Default and Test Instances
 
@@ -52,7 +51,7 @@ Using a separate database file prevents tests from creating, updating, or deleti
 
 ## Connection Lifecycle
 
-The worker owns the SQLite connection, so it is also responsible for closing it. Calling:
+The worker owns the SQLite connection, so it is also responsible for opening and closing it. `DatabaseManager` waits for a startup `Future` before accepting normal work, ensuring that initialization failures are reported early. Calling:
 
 ```python
 manager.close()
@@ -127,6 +126,19 @@ deadline.strftime("%Y-%m-%d %H:%M")
 ```
 
 This preserves the date and minute while intentionally omitting seconds.
+
+## Error Handling
+
+Callers that execute database operations should allow database failures to propagate or catch the relevant domain error when they can provide useful recovery feedback:
+
+| Error | Meaning |
+| --- | --- |
+| `DatabaseError` | The SQLite request failed, the manager was closed, or the worker is unavailable. |
+| `DatabaseTimeoutError` | The worker did not start, complete a request, or stop within its timeout. |
+| `TaskNotFoundError` | `view_single_task()` was requested for a task that does not exist. |
+| `HistoryQueryError` | A history query could not be completed. |
+
+The worker rolls back a failed SQLite operation before returning the error, preserving the connection for later requests whenever possible.
 
 ## History Operations
 

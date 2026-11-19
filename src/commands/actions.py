@@ -3,6 +3,7 @@
 This is where the link between identifying the command and executing the action occurs.
 """
 
+import logging
 import subprocess
 import webbrowser
 from database.methods import DbMethods, TaskState
@@ -10,14 +11,16 @@ from src.commands.apis import *
 import urllib.parse
 from src.audio.speech import *
 from database.db import * 
+from src.commands.errors.err_actions import *
 
+logger = logging.getLogger(__name__)
 
 class Actions:
     def __init__(self):
         self.db_m = DbMethods()
         create_table()
         self.router = {
-            "VIEW_TASKS": self.view_task,
+            "VIEW_TASKS": self.view_tasks,
             "ADD_TASK": self.add_task,
             "VIEW_HISTORY": self.view_history,
             "OPEN_APP": self.open_app,
@@ -71,6 +74,7 @@ class Actions:
 
                 if formated_t is not None:
                     update_task_time(new_name, formated_t)
+                    break
                 else:
                     speech("The new datetime is invalid")
 
@@ -78,16 +82,18 @@ class Actions:
             while True:
                 status = ask_user("Say the new task status")
                 if status == "skip":
+                    status = TaskState.PENDING.value
                     break
 
-                if TaskState(status):
-                    # pending, finished, in progress
-                    new_status = TaskState(status).value
-                    update_task_status(new_name, new_status)
+                try:
+                    status = TaskState(status).value
+                    update_task_status(new_name, status)
                     break
-
-                else:
-                    speech("Status not valid!")
+                    
+                except ValueError:
+                    error = StatusError()
+                    logger.error("[%s] %s", error.code, error.user_message)
+                    speech(error.user_message)
                     continue
 
             #update description
@@ -101,26 +107,58 @@ class Actions:
                 break
 
             speech("Task has been updated")
-
-            _ = history_insert(intent, new_name)
+            history_insert(intent, new_name)
+            
+        else:
+            error = TaskNotFoundError()
+            logger.warning("[%s] %s", error.code, error.user_message)
+            speech(error.user_message)
+            return
                 
     def view_unic_task(self, intent: str):
         task_name = ask_user("What is the name of the task you want to see?")
-        view_single_task(task_name)
 
-        _ = history_insert(intent, task_name)
+        try:
+            result = view_single_task(task_name)
+
+            if result:
+                for row in result:
+                    print(row)
+                    
+            history_insert(intent, task_name)
+            
+        except TaskNotFoundError as error:
+            logger.error("[%s] %s", error.code, error.user_message)
+            speech(error.user_message)
+            return
+       
 
     def delete_task(self, intent: str):
         task_name = ask_user("What is the name of the task you want to delete?")
-        delete_task(task_name)
-        speech(f"Task {task_name} deleted.")
+        result = delete_task(task_name)
+
+        if not result: 
+            speech(f"Task {task_name} not found.")
+            return
+
+        speech(f"Task{task_name} has been deleted.")
+        history_insert(intent, task_name)
         
-        _ = history_insert(intent, task_name)
-        
-    def view_task(self, intent: str):
+    def view_tasks(self, intent: str):
         target = "all tasks"
-        view_tasks()
-        _ = history_insert(intent, target)
+
+        try:
+            result = view_tasks()
+            if result:
+                for row in result:
+                    print(row)
+
+            history_insert(intent, target)
+                        
+        except TaskNotFoundError as error:
+            logger.error("[%s] %s", error.code, error.user_message)
+            speech(error.user_message)
+            return
 
     def add_task(self, intent: str):
         name = None
@@ -153,78 +191,103 @@ class Actions:
             if status == "skip":
                 status = None
                 break
-    
-            if TaskState(status):
+            try:
                 # pending, finished, in progress
-                status = TaskState(status).value 
+                status = TaskState(status).value
                 break
-
-            else: 
-                speech("Status not valid!")
+                
+            except ValueError:
+                error = StatusError()
+                logger.error("[%s] %s", error.code, error.user_message)
+                speech(error.user_message)
                 continue
-         
+            
         description = ask_user("What is the description of the task?")
         if description == "skip":
             description = None
             
         create_task(name, formated_t, status, description)
         speech(f"Task {name} created.")
-        _ = history_insert(intent, name)
+        history_insert(intent, name)
 
     def view_history(self, intent: str):
         target = "view history"
-        history_query()
-    
-        _ = history_insert(intent, target)
+
+        try:
+            result = history_query()
+
+            if result:
+                for row in result:
+                    print(row)
+
+        except HistoryQueryError as error:
+            logger.error("[%s] %s", error.code, error.user_message)
+            speech(error.user_message)
+            return
+                
+        history_insert(intent, target)
 
     def search(self, intent: str):
         target = ask_user("What would you like to search for?")
         formatted_content = urllib.parse.quote(target)
         url = f"https://www.google.com/search?q={formatted_content}"
-        
+
+        try:
+            if not webbrowser.open(url):
+                raise UrlError()
+        except (OSError, UrlError):
+            error = UrlError()
+            logger.exception("[%s] %s", error.code, error.user_message)
+            speech(error.user_message)
+            return
+
         speech(f"Searching for {target}.")
-        webbrowser.open(url)
-        
-        _ = history_insert(intent, target)
+        history_insert(intent, target)
 
     def open_app(self, intent: str):
         target = ask_user("Which application would you like to open?")
-        try:      
-           subprocess.Popen([target])
-           _ = history_insert(intent, target)
-           
-        except Exception:
-            speech(f"{target} not found.")
-            
-        else:
-            speech(f"Opened {target}.")
+        try:
+            _ = subprocess.Popen([target])
+        except OSError:
+            error = AppNotFound()
+            logger.exception("[%s] %s", error.code, error.user_message)
+            speech(f"{target} {error.user_message}")
+            return
+
+        speech(f"Opened {target}.")
+        history_insert(intent, target)
 
     def close_app(self, intent: str):
         target = ask_user("Which application would you like to close?")
         try:
-            subprocess.Popen(["kill", target])
-            _ = history_insert(intent, target)
-            
-        except Exception:
-            speech(f"{target} not found!")
-        else:
-            speech(f"Closed {target}.")
+            _ = subprocess.Popen(["kill", target])
+        except OSError:
+            error = AppNotFound()
+            logger.exception("[%s] %s", error.code, error.user_message)
+            speech(f"{target} {error.user_message}")
+            return
 
+        speech(f"Closed {target}.")
+        history_insert(intent, target)
+        
     def ask_gemini(self, intent: str):
         target = ask_user("hello, how can i help you?")
         speech("Thinking")
 
         response = ask_gemini(target)
         print(response)
-        _ = history_insert(intent, target)
+        history_insert(intent, target)
 
     def play_music(self, intent: str):
-        subprocess.Popen(["spotify-launcher"])
+        
 
         target = ask_user("What would you like to hear?")
         #Captures the "play music-name" command and searches for the specific song on Spotify
         #You need Spotify for Developers and spotify-launcher.
         try:
+            sp = get_client()
+            _ = subprocess.Popen(["spotify-launcher"])
+            
             if target:
                 result = sp.search(q=target, limit= 1, type="track")
 
@@ -235,36 +298,46 @@ class Actions:
                         music_uri = tracks[0]["uri"] #select the first track and your uri
                         sp.start_playback(uris = [music_uri])
                         speech(f"Playing {target}.")
-                        _ = history_insert(intent, target)
+                        history_insert(intent, target)
 
                     else:
                         speech("Music not found!")
+
+        except OSError:
+            error = SpotifyError()
+            logger.exception("[%s] %s", error.code, error.user_message)
+            speech("Spotify is not installed or not found. Please install Spotify and try again.")
+            return
+            
         except Exception:
-            speech("Failed to communicate with Spotify")
+            error = SpotifyError()
+            logger.exception("[%s] %s", error.code, error.user_message)
+            speech(error.user_message)
+            return
 
     def update(self, intent: str):
-        subprocess.Popen(["sudo", "pacman", "-Syu"])
-        _ = history_insert(intent)
+        _ = subprocess.Popen(["sudo", "pacman", "-Syu"])
         speech("Update started.")
+        history_insert(intent)
 
     def next_music(self, intent: str):
-        subprocess.Popen(["playerctl", "next"])
-        _ = history_insert(intent)
+        _ = subprocess.Popen(["playerctl", "next"])
+        history_insert(intent)
 
     def up_vol(self, intent: str):
-        subprocess.Popen(["wpctl", "set-volume", "@DEFAULT_AUDIO_SINK@", "5%+"])
-        _ = history_insert(intent)
+        _ =subprocess.Popen(["wpctl", "set-volume", "@DEFAULT_AUDIO_SINK@", "5%+"])
+        history_insert(intent)
 
     def down_vol(self, intent: str):
-        subprocess.Popen(["wpctl", "set-volume", "@DEFAULT_AUDIO_SINK@", "5%-"])
-        _ = history_insert(intent)
+        _ = subprocess.Popen(["wpctl", "set-volume", "@DEFAULT_AUDIO_SINK@", "5%-"])
+        history_insert(intent)
 
     def stop_music(self, intent: str):
-        subprocess.Popen(["playerctl", "stop"])
-        _ = history_insert(intent)
+        _ = subprocess.Popen(["playerctl", "stop"])
+        history_insert(intent)
 
     def resume_music(self, intent: str):
-        subprocess.Popen(["playerctl", "play"])
-        _ = history_insert(intent)
+        _ = subprocess.Popen(["playerctl", "play"])
+        history_insert(intent)
 
     

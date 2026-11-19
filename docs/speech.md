@@ -4,9 +4,9 @@ This document details the core speech generation, speech recognition, and intera
 
 ## Text-to-Speech Generation and Feedback
 
-The `speech` function handles vocal feedback by converting text responses into spoken English audio. It utilizes the `gTTS` (Google Text-to-Speech) library to synthesize the provided string into an MP3 file. Once generated, the audio file is played back asynchronously using `ffplay` with silenced standard output and error streams to keep the terminal clean and non-intrusive. 
+The `speech` function handles vocal feedback by converting text responses into spoken English audio. It utilizes the `gTTS` (Google Text-to-Speech) library to synthesize the provided string into an MP3 file. Once generated, the audio file is played with `ffplay`; standard output is suppressed, while standard error is captured so a failed player exit code can be recorded in the application log.
 
-To ensure proper resource management and prevent leftover clutter, the function automatically cleans up by deleting the temporary `speech.mp3` file from disk immediately after playback finishes. A brief pause of 400 milliseconds is introduced at the end of execution to prevent audio clipping or overlapping with subsequent system actions.
+Failures during synthesis or playback are caught and logged with their traceback, preventing an audio-output issue from crashing the command flow. The temporary `speech.mp3` file is deleted in a `finally` block, including when synthesis or playback fails. A brief pause of 400 milliseconds is introduced at the end of execution to prevent audio clipping or overlapping with subsequent system actions.
 
 ## Audio Transcription and Keyword Guidance
 
@@ -19,3 +19,5 @@ Parameters such as a fixed English language constraint, beam search size of 5, a
 The module coordinates interactive dialogue loops using the `ask_user` function alongside the `limited_hear` context manager. When the system needs to prompt the user for input, `ask_user` first invokes the `speech` function to voice the question. 
 
 To isolate this conversational exchange from background listening routines, `limited_hear` acts as a context manager that flushes any stale data from the global state queue (`state.q`) and temporarily overrides processing flags (`state.is_processing = False`). Inside this guarded block, the system enters a polling loop that listens specifically for the user's response chunk, transcribes it through the Whisper pipeline, and returns the cleaned text as soon as a valid utterance is captured.
+
+> `ask_user` intentionally keeps waiting until it receives valid speech. It does not currently implement a total interaction timeout or a voice cancellation command.

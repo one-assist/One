@@ -1,12 +1,17 @@
 # This is where the connection between `start_listening()` and the interface is made.
 
 from src.audio.listener import *
+import logging
 import slint
 import os
 import threading
+from src.exceptions.base_err import setup_logging
 
+logger = logging.getLogger(__name__)
 
 def main():
+    setup_logging()
+    
     path = os.path.dirname(os.path.abspath(__file__))
     slint_path = os.path.join(path, '..', 'frontend', 'app-window.slint')
 
@@ -16,14 +21,18 @@ def main():
 
     event_status = threading.Event()
     event_status.clear()
+    app.assistant_listening = False
 
     def switch():
-        #Is called when the user toggles the program on/off
-        # If event_status is true, the clear() reverts to the default value (false)
+        """Keep the listener Event and the Slint indicator in the same state."""
         if event_status.is_set():
             event_status.clear()
         else:
             event_status.set()
+
+        is_listening = event_status.is_set()
+        app.assistant_listening = is_listening
+        logger.info("Listener enabled: %s", is_listening)
 
     app.start_program = switch
 

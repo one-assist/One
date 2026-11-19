@@ -13,7 +13,7 @@ To successfully utilize this module, several environment variables must be secur
 
 The Gemini integration is designed around the `ask_gemini` function, which accepts a text prompt and returns the generated response string from Google's models. It interacts with the `gemini-3.6-flash` model using the official `google-genai` client library.
 
-To ensure robustness against transient cloud errors or service overload, the function implements an automatic retry mechanism with exponential backoff. If an `APIError` with a status code of 503 (Service Unavailable) occurs, the system catches the exception and waits for an incremental delay (`2 ^ attempt` seconds) before retrying up to a maximum of 3 attempts. In the event of persistent API failures or unexpected exceptions, errors are gracefully handled and logged, returning a standardized fallback error message to prevent application crashes.
+To handle transient cloud errors or service overload, the function retries only an `APIError` with status code `503` (Service Unavailable). It waits with exponential backoff (`2 ** attempt` seconds) and makes at most three attempts. Other API errors, a final 503 failure, and unexpected exceptions are logged with traceback details. In those cases, the function returns the fallback string `"Gemini server error"` instead of propagating the failure into the command flow.
 
 ## Spotify Integration
 
