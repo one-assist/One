@@ -10,7 +10,6 @@ from typing import Any
 from datetime import datetime
 from src.audio.speech import speech
 from concurrent.futures import Future, TimeoutError as FutureTimeoutError
-
 from database.errors.err_db import DatabaseError, DatabaseTimeoutError
 from src.commands.errors.err_actions import HistoryQueryError, TaskNotFoundError
 

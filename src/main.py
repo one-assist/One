@@ -9,6 +9,8 @@ from src.exceptions.base_err import setup_logging
 
 logger = logging.getLogger(__name__)
 
+started = time.perf_counter()
+
 def main():
     setup_logging()
     
@@ -42,6 +44,7 @@ def main():
 
     app.run()
 
+    logger.info("Application time %.2fs", time.perf_counter() - started)
 
 if __name__ == "__main__":
     main()

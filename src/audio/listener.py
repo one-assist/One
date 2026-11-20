@@ -107,7 +107,12 @@ def start_listerning(event_status: threading.Event):
                 state.is_processing = True
                 
                 try:
+                    started = time.perf_counter()
+                    #the transcribe audio function
                     text = transcribe_audio(audio_chunk)
+                    
+                    # execution time info
+                    logger.info("Transcription took %.2fs", time.perf_counter() - started)
                     logger.info("Transcription result: %r", text)
         
                     if text:
@@ -120,19 +125,29 @@ def start_listerning(event_status: threading.Event):
                             speech("One is awake.")
     
                         elif not state.is_sleeping:
+                            started = time.perf_counter()
+
+                            #The tf-idf classifier
                             classifier = Classifier()
                             intent_object = classifier.get_intent(text)
                             intent = intent_object.intent
-                            
+                            logger.info("Classifier time %.2fs", time.perf_counter() - started)
+
+                            started = time.perf_counter()
                             scanner = Scanner(text)
                             scanner.scan()
-        
+                            logger.info("Scanner Time %.2fs", time.perf_counter() - started)
+
+                            started = time.perf_counter()
                             parser = Parser(scanner.tokens, intent)
                             ast_root = parser.parse_command()
-        
+                            logger.info("Parser Time %.2fs", time.perf_counter() - started)
+                            
                             if ast_root:
+                                started = time.perf_counter()
                                 ast_checker(ast_root)
-                                
+
+                                logger.info("AST Time %.2fs", time.perf_counter() - started)
                 except Exception:
                     logger.exception("Error during audio processing pipeline")
                     speech("An error occurred while processing the audio.")
