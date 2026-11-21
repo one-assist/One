@@ -4,6 +4,7 @@ Test database main methods (create, delete, insert, update, select)
 
 import unittest
 import os
+import tempfile
 
 from typing import override
 from database.db import *
@@ -16,9 +17,8 @@ class TestDatabase(unittest.TestCase):
 
     @override
     def setUp(self) -> None:
-        self.db_path = "tests/db/test_database.db"
-        if os.path.exists(self.db_path):
-            os.remove(self.db_path)
+        self._temp_dir = tempfile.TemporaryDirectory()
+        self.db_path = os.path.join(self._temp_dir.name, "test_database.db")
             
         self.db = get_db_manager(self.db_path)
         create_table(self.db)
@@ -28,8 +28,7 @@ class TestDatabase(unittest.TestCase):
     def tearDown(self) -> None:
         if self.db is not None:
             self.db.close()
-        if self.db_path is not None and os.path.exists(self.db_path):
-            os.remove(self.db_path)
+        self._temp_dir.cleanup()
         super().tearDown()
 
     def test_create_task(self):
