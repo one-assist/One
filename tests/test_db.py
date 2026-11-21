@@ -2,18 +2,20 @@
 Test database main methods (create, delete, insert, update, select)
 """
 
-import unittest
 import os
 import tempfile
-
+import unittest
 from typing import override
+
 from database.db import *
 from database.methods import DbMethods
+
 
 class TestDatabase(unittest.TestCase):
     db: DatabaseManager | None = None
     db_path: str | None = None
     db_methods: DbMethods | None = None
+    _temp_dir: tempfile.TemporaryDirectory[str] | None = None
 
     @override
     def setUp(self) -> None:
@@ -28,7 +30,9 @@ class TestDatabase(unittest.TestCase):
     def tearDown(self) -> None:
         if self.db is not None:
             self.db.close()
-        self._temp_dir.cleanup()
+
+        if self._temp_dir is not None:
+            self._temp_dir.cleanup()
         super().tearDown()
 
     def test_create_task(self):

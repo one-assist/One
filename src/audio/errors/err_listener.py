@@ -1,5 +1,6 @@
 from src.exceptions.base_err import OneError
 
+
 class ListenerError(OneError):
     """Raised when there is an error related to the listener."""
 

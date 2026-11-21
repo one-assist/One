@@ -1,16 +1,17 @@
 """Database functions and their isolated background worker."""
 
 import atexit
+import logging
 import queue
 import sqlite3
 import threading
-import logging
-
-from typing import Any
+from concurrent.futures import Future
+from concurrent.futures import TimeoutError as FutureTimeoutError
 from datetime import datetime
-from src.audio.speech import speech
-from concurrent.futures import Future, TimeoutError as FutureTimeoutError
+from typing import Any
+
 from database.errors.err_db import DatabaseError, DatabaseTimeoutError
+from src.audio.speech import speech
 from src.commands.errors.err_actions import HistoryQueryError, TaskNotFoundError
 
 logger = logging.getLogger(__name__)

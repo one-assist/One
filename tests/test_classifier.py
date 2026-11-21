@@ -1,9 +1,8 @@
+"""Test cases for the Classifier model."""
 
-"""
-Test cases for the Classifier model.
-"""
 import unittest
-from src.classifier.model import * 
+
+from src.classifier.model import *
 
 
 class TestClassifier(unittest.TestCase):

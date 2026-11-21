@@ -1,10 +1,10 @@
 # This is where the connection between `start_listening()` and the interface is made.
 
-from datetime import timedelta
 import logging
 import os
 import queue
 import threading
+from datetime import timedelta
 
 import slint
 

@@ -4,8 +4,9 @@ The parser is where the distinction is made between elements conveying an intend
 (such as *and*, *in*, *to*, *on*). Furthermore, the command is separated into a target and an action.
 """
 
-from src.lexer.token import Token, TokenType
 from src.classifier.model import *
+from src.lexer.token import Token, TokenType
+
 
 class CommandExpr:
         pass

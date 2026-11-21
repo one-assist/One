@@ -1,17 +1,15 @@
+"""This module contains the APIs for interacting with the Gemini and Spotify APIs."""
 
-"""
-This module contains the APIs for interacting with the Gemini and Spotify APIs.
-"""
-
-import os 
-import spotipy
-import time
 import logging
+import os
+import time
 
+import spotipy
+from dotenv import load_dotenv
 from google import genai
 from google.genai.errors import APIError
-from dotenv import load_dotenv
 from spotipy.oauth2 import SpotifyOAuth
+
 from src.commands.errors.err_apis import *
 
 _ = load_dotenv()

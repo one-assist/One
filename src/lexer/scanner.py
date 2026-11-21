@@ -4,8 +4,10 @@ The scanner is responsible for identifying which words in the received text are 
 which are not—treating ordinary words (non-tokens) as identifiers. Afterward, it stores the tokens in an array.
 """
 
-from src.lexer.token import *
 import importlib.resources
+
+from src.lexer.token import *
+
 
 #translate a string into a list of tokens
 class Scanner:

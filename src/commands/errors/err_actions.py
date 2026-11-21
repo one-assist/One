@@ -1,5 +1,6 @@
 from src.exceptions.base_err import OneError
 
+
 class StatusError(OneError):
     """Raised when the status of a task is invalid."""
 

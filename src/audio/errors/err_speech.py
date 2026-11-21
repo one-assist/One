@@ -1,5 +1,6 @@
 from src.exceptions.base_err import OneError
 
+
 class SpeechError(OneError):
     """Raised when there is an error related in speech function."""
 

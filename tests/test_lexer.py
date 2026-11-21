@@ -12,6 +12,7 @@ import unittest
 from src.lexer.scanner import *
 from src.lexer.token import *
 
+
 class TestLexer(unittest.TestCase):
     
     def test_similarity(self):                                             
