@@ -9,25 +9,27 @@ within the AST, it undergoes a conditional check to determine whether it constit
 import logging
 import queue
 import threading
-
-import sounddevice as sd
-from src.commands.actions import *
-import numpy as np
 import webrtcvad
+import sounddevice as sd
+import numpy as np
+
+from src.commands.actions import *
 from src.lexer.scanner import *
 from src.parser.parser import *
 from src.ast.checker import ast_checker
 from src.audio.speech import speech, transcribe_audio
-from src.state import state
+from src.utils.state import state
 from src.classifier.model import *
-from src.config import (
+from src.audio.errors.err_listener import *
+from src.utils.config import (
     END_SILENCE_FRAMES,
     FRAME_SIZE,
     MIN_AUDIO_FRAMES,
     SAMPLERATE,
     VAD_AGGRESSIVENESS,
 )
-from src.audio.errors.err_listener import *
+from src.utils.timing import measure
+
 
 logger = logging.getLogger(__name__)
                          
@@ -107,12 +109,11 @@ def start_listerning(event_status: threading.Event):
                 state.is_processing = True
                 
                 try:
-                    started = time.perf_counter()
-                    #the transcribe audio function
-                    text = transcribe_audio(audio_chunk)
+                    with measure("Transcription"):
+                        #the transcribe audio function
+                        text = transcribe_audio(audio_chunk)
                     
                     # execution time info
-                    logger.info("Transcription took %.2fs", time.perf_counter() - started)
                     logger.info("Transcription result: %r", text)
         
                     if text:
@@ -125,29 +126,27 @@ def start_listerning(event_status: threading.Event):
                             speech("One is awake.")
     
                         elif not state.is_sleeping:
-                            started = time.perf_counter()
+                            
+                            with measure("Classifier"):
+                                
+                                #The tf-idf classifier
+                                classifier = Classifier()
+                                intent_object = classifier.get_intent(text)
+                                intent = intent_object.intent
+                            
 
-                            #The tf-idf classifier
-                            classifier = Classifier()
-                            intent_object = classifier.get_intent(text)
-                            intent = intent_object.intent
-                            logger.info("Classifier time %.2fs", time.perf_counter() - started)
+                            with measure("Scanner"):
+                                scanner = Scanner(text)
+                                scanner.scan()
 
-                            started = time.perf_counter()
-                            scanner = Scanner(text)
-                            scanner.scan()
-                            logger.info("Scanner Time %.2fs", time.perf_counter() - started)
-
-                            started = time.perf_counter()
-                            parser = Parser(scanner.tokens, intent)
-                            ast_root = parser.parse_command()
-                            logger.info("Parser Time %.2fs", time.perf_counter() - started)
+                            with measure("Parser"):
+                                parser = Parser(scanner.tokens, intent)
+                                ast_root = parser.parse_command()
                             
                             if ast_root:
-                                started = time.perf_counter()
-                                ast_checker(ast_root)
+                                with measure("AST"):
+                                    ast_checker(ast_root)
 
-                                logger.info("AST Time %.2fs", time.perf_counter() - started)
                 except Exception:
                     logger.exception("Error during audio processing pipeline")
                     speech("An error occurred while processing the audio.")

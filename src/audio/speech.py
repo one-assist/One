@@ -5,10 +5,11 @@ import queue
 import subprocess
 import time
 
-from faster_whisper import WhisperModel
 from gtts import gTTS
-from src.state import state
+from faster_whisper import WhisperModel
+from src.utils.state import state
 from src.audio.errors.err_speech import *
+from src.utils.timing import *
 
 logger = logging.getLogger(__name__)
 model = WhisperModel("base.en", device= "cpu", compute_type= "int8")
