@@ -4,7 +4,6 @@ This file provides an intent classification model using a Naive Bayes classifier
 """
 
 import joblib
-from sklearn.externals.array_api_compat.numpy import concat
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import make_pipeline

@@ -1,10 +1,17 @@
-gtts
-webrtcvad
-sounddevice
-numpy
-spotipy
-symspellpy
-jellyfish
-slint
-scikit-learn
-dateparser
+# Runtime dependencies. Tested with Python 3.12.
+# gTTS requires click<8.2; huggingface-hub 1.x requires an incompatible click>=8.4.2.
+huggingface-hub<1.0
+dateparser==1.4.3
+faster-whisper==1.2.1
+google-genai==2.22.0
+gTTS==2.5.4
+jellyfish==1.2.1
+joblib==1.6.0
+numpy==2.5.2
+python-dotenv==1.2.3
+scikit-learn==1.9.1
+slint==1.18.1b1
+sounddevice==0.5.6
+spotipy==2.26.0
+symspellpy==6.10.0
+webrtcvad-wheels==2.0.14

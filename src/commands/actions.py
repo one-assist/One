@@ -177,43 +177,50 @@ class Actions:
 
         while True:
             name = ask_user("What is the name of the task?")
-    
-            if not verify_task(name):
-                break
-            else:
-                speech(f"A task with the name {name} already exists. Please choose a different name.")
+
+            with measure("Add task name"):
+                
+                if not verify_task(name):
+                    break
+                else:
+                    speech(f"A task with the name {name} already exists. Please choose a different name.")
                             
         while True:
             time_remaining = ask_user("What is the time remaining for the task?")
-            if time_remaining == "skip":
-                formated_t = None
-                break
 
-            formated_t = self.db_m.formatDate(time_remaining)
-
-            if formated_t is not None:
-                break
-                
+            with measure("Add task date"):
+                if time_remaining == "skip":
+                    formated_t = None
+                    break
+    
+                formated_t = self.db_m.formatDate(time_remaining)
+    
+                if formated_t is not None:
+                    break
+                    
         while True:
             status = ask_user("What is the status of the task?")
-            
-            if status == "skip":
-                status = None
-                break
-            try:
-                # pending, finished, in progress
-                status = TaskState(status).value
-                break
+
+            with measure("Add task status"):
+                if status == "skip":
+                    status = None
+                    break
+                try:
+                    # pending, finished, in progress
+                    status = TaskState(status).value
+                    break
+                    
+                except ValueError:
+                    error = StatusError()
+                    logger.error("[%s] %s", error.code, error.user_message)
+                    speech(error.user_message)
+                    continue
                 
-            except ValueError:
-                error = StatusError()
-                logger.error("[%s] %s", error.code, error.user_message)
-                speech(error.user_message)
-                continue
-            
         description = ask_user("What is the description of the task?")
-        if description == "skip":
-            description = None
+
+        with measure("Add task description"):
+            if description == "skip":
+                description = None
             
         create_task(name, formated_t, status, description)
         speech(f"Task {name} created.")
