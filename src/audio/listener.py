@@ -6,21 +6,21 @@ Once converted, the text is processed by a Lexer/Parser/AST structure;
 within the AST, it undergoes a conditional check to determine whether it constitutes a valid command.
 """
 
-import logging
+import logging  # noqa: I001
 import queue
 import threading
-import webrtcvad
-import sounddevice as sd
-import numpy as np
 
+import numpy as np
+import sounddevice as sd
+import webrtcvad
+
+from src.ast.checker import ast_checker
+from src.audio.errors.err_listener import *
+from src.audio.speech import speech, transcribe_audio
+from src.classifier.model import *
 from src.commands.actions import *
 from src.lexer.scanner import *
 from src.parser.parser import *
-from src.ast.checker import ast_checker
-from src.audio.speech import speech, transcribe_audio
-from src.utils.state import state
-from src.classifier.model import *
-from src.audio.errors.err_listener import *
 from src.utils.config import (
     END_SILENCE_FRAMES,
     FRAME_SIZE,
@@ -28,6 +28,7 @@ from src.utils.config import (
     SAMPLERATE,
     VAD_AGGRESSIVENESS,
 )
+from src.utils.state import state
 from src.utils.timing import measure
 
 

@@ -5,13 +5,15 @@ This is where the link between identifying the command and executing the action 
 
 import logging
 import subprocess
-import webbrowser
-from database.methods import DbMethods, TaskState
-from src.commands.apis import *
 import urllib.parse
+import webbrowser
+
+from database.db import *
+from database.methods import DbMethods, TaskState
 from src.audio.speech import *
-from database.db import * 
+from src.commands.apis import *
 from src.commands.errors.err_actions import *
+from src.utils.timing import *
 
 logger = logging.getLogger(__name__)
 
@@ -54,57 +56,64 @@ class Actions:
             #update name
             while True:
                 new_name = ask_user("Say the new task name")
-                if new_name == "skip":
-                    new_name = task_name
+
+                with measure("Update task name"):
+                    if new_name == "skip":
+                        new_name = task_name
+                        break
+                    if verify_task(new_name):
+                        speech("Task already exists")
+                        continue
+                        
+                    update_task_name(task_name, new_name) #old name, new name
                     break
-                if verify_task(new_name):
-                    speech("Task already exists")
-                    continue
-                    
-                update_task_name(task_name, new_name) #old name, new name
-                break
 
             #update datetime
             while True:
                 new_date = ask_user("Say the new task date")
-                if new_date == "skip":
-                    break
 
-                formated_t = self.db_m.formatDate(new_date)
-
-                if formated_t is not None:
-                    update_task_time(new_name, formated_t)
-                    break
-                else:
-                    speech("The new datetime is invalid")
+                with measure("Update task date"):
+                    if new_date == "skip":
+                        break
+    
+                    formated_t = self.db_m.formatDate(new_date)
+    
+                    if formated_t is not None:
+                        update_task_time(new_name, formated_t)
+                        break
+                    else:
+                        speech("The new datetime is invalid")
 
             #update status
             while True:
                 status = ask_user("Say the new task status")
-                if status == "skip":
-                    status = TaskState.PENDING.value
-                    break
 
-                try:
-                    status = TaskState(status).value
-                    update_task_status(new_name, status)
-                    break
+                with measure("Update task status"):
+                    if status == "skip":
+                        status = TaskState.PENDING.value
+                        break
+    
+                    try:
+                        status = TaskState(status).value
+                        update_task_status(new_name, status)
+                        break
                     
-                except ValueError:
-                    error = StatusError()
-                    logger.error("[%s] %s", error.code, error.user_message)
-                    speech(error.user_message)
-                    continue
+                    except ValueError:
+                        error = StatusError()
+                        logger.error("[%s] %s", error.code, error.user_message)
+                        speech(error.user_message)
+                        continue
 
             #update description
             while True:
                 description = ask_user("Say the new description")
 
-                if description == "skip":
+                with measure("Update task description"):
+                    if description == "skip":
+                        break
+    
+                    update_task_description(new_name, description)
                     break
-
-                update_task_description(new_name, description)
-                break
 
             speech("Task has been updated")
             history_insert(intent, new_name)

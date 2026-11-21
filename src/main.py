@@ -1,10 +1,12 @@
 # This is where the connection between `start_listening()` and the interface is made.
 
-from src.audio.listener import *
 import logging
-import slint
 import os
 import threading
+
+import slint
+
+from src.audio.listener import *
 from src.exceptions.base_err import setup_logging
 
 logger = logging.getLogger(__name__)
