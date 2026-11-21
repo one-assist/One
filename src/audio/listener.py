@@ -38,7 +38,6 @@ logger = logging.getLogger(__name__)
 def start_listerning(event_status: threading.Event):
     vad = webrtcvad.Vad(VAD_AGGRESSIVENESS)
     logger.info("Starting audio listener (device=%s, sample_rate=%s)", sd.default.device, SAMPLERATE)
-    speech("Welcome to One. How can I help you?")
     state.is_sleeping = False
     buffer = []
     is_recording = False
@@ -98,6 +97,7 @@ def start_listerning(event_status: threading.Event):
             blocksize=FRAME_SIZE,
         ):
             logger.info("Audio input stream opened; waiting for the UI to enable listening")
+            speech("Welcome to One. Loading speech recognition.")
             while True:
                 event_status.wait() #Blocks thread execution until event() is true
 
@@ -106,6 +106,9 @@ def start_listerning(event_status: threading.Event):
                 except queue.Empty:
                     continue
 
+                if not event_status.is_set():
+                    logger.debug("Discarded audio because the listener was disabled")
+                    continue
 
                 state.is_processing = True
                 

@@ -8,6 +8,8 @@ export component MainWindow inherits Window {
     height: 720px;
     background: #03080d;
     in-out property <bool> assistant-listening;
+    in-out property <bool> assistant-ready: false;
+    in-out property <string> assistant-status: "Loading speech recognition...";
     callback start_program();
 
     //main gradient
@@ -80,9 +82,19 @@ export component MainWindow inherits Window {
         );
     }
 
+    Text {
+        x: 0px;
+        y: 570px;
+        width: parent.width;
+        text: root.assistant-status;
+        color: #71d9d9;
+        horizontal-alignment: center;
+    }
+
     VoiceOrb {
+        ready: root.assistant-ready;
         active: root.assistant-listening;
-        start_program => { 
+        start_program => {
             root.start_program();
         }
     }

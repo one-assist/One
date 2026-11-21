@@ -6,6 +6,7 @@ export component VoiceOrb inherits Rectangle {
     height: 360px;
     background: transparent;
     callback start_program();
+    in property <bool> ready: false;
     in-out property <bool> active: true;
 
     // External wine halo
@@ -259,8 +260,10 @@ export component VoiceOrb inherits Rectangle {
     TouchArea {
         mouse-cursor: pointer;
         clicked => {
-            root.active = !root.active;
-            root.start_program();
+            if (root.ready) {
+                root.active = !root.active;
+                root.start_program();
+            }
         }
     }
 }

@@ -288,10 +288,13 @@ class Actions:
         
     def ask_gemini(self, intent: str):
         target = ask_user("hello, how can i help you?")
-        speech("Thinking")
 
-        response = ask_gemini(target)
-        print(response)
+        with measure("Ask Gemini"):
+            speech("Thinking")
+
+            response = ask_gemini(target)
+            print(response)
+
         history_insert(intent, target)
 
     def play_music(self, intent: str):

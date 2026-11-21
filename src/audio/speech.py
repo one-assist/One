@@ -5,6 +5,7 @@ import logging
 import os
 import queue
 import subprocess
+import threading
 import time
 
 from faster_whisper import WhisperModel
@@ -12,9 +13,54 @@ from gtts import gTTS
 
 from src.audio.errors.err_speech import *
 from src.utils.state import state
+from src.utils.timing import measure
 
 logger = logging.getLogger(__name__)
-model = WhisperModel("base.en", device= "cpu", compute_type= "int8")
+model: WhisperModel | None = None
+_model_lock = threading.Lock()
+_model_loaded = threading.Event()
+_model_loading = False
+
+
+def preload_model() -> None:
+    """Load Whisper once without blocking the UI thread."""
+    global model, _model_loading
+
+    with _model_lock:
+        if _model_loading or _model_loaded.is_set():
+            return
+        _model_loading = True
+
+    try:
+        with measure("Whisper model preload"):
+            model = WhisperModel("base.en", device="cpu", compute_type="int8")
+        logger.info("Whisper model is ready")
+    except Exception:
+        logger.exception("Unable to load the Whisper model")
+    finally:
+        _model_loaded.set()
+
+
+def model_load_finished() -> bool:
+    """Return whether the preload attempt has completed."""
+    return _model_loaded.is_set()
+
+
+def model_is_ready() -> bool:
+    """Return whether Whisper loaded successfully."""
+    return model is not None
+
+
+def get_model() -> WhisperModel:
+    """Wait for the shared Whisper model, loading it on demand if needed."""
+    if not _model_loaded.is_set():
+        preload_model()
+        _model_loaded.wait()
+
+    if model is None:
+        raise RuntimeError("Whisper model is unavailable")
+
+    return model
 
 #Função para voz de resposta a comandos
 def speech(text: str):
@@ -58,7 +104,7 @@ def clean_text(text: str) -> str:
 
 def transcribe_audio(audio):
     prompts = "close, search, start, gemini, up, down, task, create, view"
-    segments, _ = model.transcribe(
+    segments, _ = get_model().transcribe(
         audio, 
         language="en",
         condition_on_previous_text=False, 
