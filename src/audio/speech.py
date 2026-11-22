@@ -7,6 +7,7 @@ import queue
 import subprocess
 import threading
 import time
+import pypiper
 
 from faster_whisper import WhisperModel
 from gtts import gTTS
@@ -62,7 +63,21 @@ def get_model() -> WhisperModel:
 
     return model
 
-#Função para voz de resposta a comandos
+def speech1(text: str):
+    out_file = "speech.wav"
+    voice_model = ""
+
+    try:
+        _ = subprocess.run(
+            ["piper", "-m", voice_model, "-f", out_file],
+            input = text,
+            text = True,
+            check = True
+        )
+    except subprocess.CalledProcessError as e:
+        logger.error("Piper failed with exit code %s: %s", e.returncode, e.stderr)
+
+# function to synthesize speech from text and play it using ffplay
 def speech(text: str):
     filename = "speech.mp3"
 
@@ -110,7 +125,7 @@ def transcribe_audio(audio):
         condition_on_previous_text=False, 
         no_speech_threshold=0.6,         
         vad_filter=True, 
-        beam_size=5, 
+        beam_size=3, 
         temperature=[0.0, 0.2, 0.4, 0.6], 
         compression_ratio_threshold=2.4,  
         log_prob_threshold=-1.0,
