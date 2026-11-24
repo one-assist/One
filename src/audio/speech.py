@@ -5,9 +5,10 @@ import logging
 import os
 import queue
 import subprocess
+import sys
 import threading
 import time
-import pypiper
+from pathlib import Path
 
 from faster_whisper import WhisperModel
 from gtts import gTTS
@@ -63,19 +64,55 @@ def get_model() -> WhisperModel:
 
     return model
 
+PIPER_VOICE_DIR = Path(__file__).resolve().parent / "voices"
+PIPER_MODEL_PATH = PIPER_VOICE_DIR / "en_US-lessac-medium.onnx"
+PIPER_CONFIG_PATH = PIPER_VOICE_DIR / "en_US-lessac-medium.onnx.json"
+
+
 def speech1(text: str):
-    out_file = "speech.wav"
-    voice_model = ""
+    """Synthesize and play speech with the bundled Piper voice."""
+    output_path = Path("speech.wav")
+
+    if not PIPER_MODEL_PATH.is_file() or not PIPER_CONFIG_PATH.is_file():
+        logger.error("Piper voice files are missing from %s", PIPER_VOICE_DIR)
+        return
 
     try:
-        _ = subprocess.run(
-            ["piper", "-m", voice_model, "-f", out_file],
-            input = text,
-            text = True,
-            check = True
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "piper",
+                "--model",
+                str(PIPER_MODEL_PATH),
+                "--config",
+                str(PIPER_CONFIG_PATH),
+                "--output-file",
+                str(output_path),
+            ],
+            input=text,
+            text=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
+            check=False,
         )
-    except subprocess.CalledProcessError as e:
-        logger.error("Piper failed with exit code %s: %s", e.returncode, e.stderr)
+        if result.returncode != 0:
+            logger.error("Piper synthesis failed: %s", result.stderr.strip())
+            return
+
+        playback = subprocess.run(
+            ["ffplay", "-nodisp", "-autoexit", str(output_path)],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=False,
+        )
+        if playback.returncode != 0:
+            logger.error("ffplay failed with exit code %s: %s", playback.returncode, playback.stderr.strip())
+    except OSError:
+        logger.exception("Unable to synthesize or play Piper speech")
+    finally:
+        output_path.unlink(missing_ok=True)
 
 # function to synthesize speech from text and play it using ffplay
 def speech(text: str):
