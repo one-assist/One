@@ -64,13 +64,14 @@ def get_model() -> WhisperModel:
 
     return model
 
-PIPER_VOICE_DIR = Path(__file__).resolve().parent / "voices"
-PIPER_MODEL_PATH = PIPER_VOICE_DIR / "en_US-lessac-medium.onnx"
-PIPER_CONFIG_PATH = PIPER_VOICE_DIR / "en_US-lessac-medium.onnx.json"
-
-
-def speech1(text: str):
+# function to synthesize speech from text and play it using ffplay
+def speech(text: str):
     """Synthesize and play speech with the bundled Piper voice."""
+
+    PIPER_VOICE_DIR = Path(__file__).resolve().parent / "voices"
+    PIPER_MODEL_PATH = PIPER_VOICE_DIR / "en_US-lessac-medium.onnx"
+    PIPER_CONFIG_PATH = PIPER_VOICE_DIR / "en_US-lessac-medium.onnx.json"
+    
     output_path = Path("speech.wav")
 
     if not PIPER_MODEL_PATH.is_file() or not PIPER_CONFIG_PATH.is_file():
@@ -96,6 +97,7 @@ def speech1(text: str):
             stderr=subprocess.PIPE,
             check=False,
         )
+        
         if result.returncode != 0:
             logger.error("Piper synthesis failed: %s", result.stderr.strip())
             return
@@ -107,42 +109,15 @@ def speech1(text: str):
             text=True,
             check=False,
         )
+        
         if playback.returncode != 0:
             logger.error("ffplay failed with exit code %s: %s", playback.returncode, playback.stderr.strip())
+
     except OSError:
         logger.exception("Unable to synthesize or play Piper speech")
+
     finally:
         output_path.unlink(missing_ok=True)
-
-# function to synthesize speech from text and play it using ffplay
-def speech(text: str):
-    filename = "speech.mp3"
-
-    try:
-        tts = gTTS(text=text, lang="en")
-        tts.save(filename)
-
-        result = subprocess.run(
-            ["ffplay", "-nodisp", "-autoexit", filename],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.PIPE,
-            text=True,
-            check=False,
-        )
-        if result.returncode != 0:
-            logger.error(
-                "ffplay failed with exit code %s: %s",
-                result.returncode,
-                result.stderr.strip(),
-            )
-    except Exception:
-        logger.exception("Unable to synthesize or play speech")
-        
-    finally:
-        if os.path.exists(filename):
-            os.remove(filename)
-
-    time.sleep(0.4)
 
 def clean_text(text: str) -> str:
     cleaned = text.strip()\
