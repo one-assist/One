@@ -2,6 +2,7 @@
 
 import queue
 
+
 class AppState:
     def __init__(self) -> None:
         self.q: queue.Queue[object] = queue.Queue()

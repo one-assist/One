@@ -4,7 +4,9 @@ Trains a classifier on the dataset and saves the model to a file.
 """
 
 import json
+
 from src.classifier.model import Classifier
+
 
 # Loads the dataset from a JSON file and returns it as a list of texts and labels.
 def load_dataset():

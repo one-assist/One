@@ -9,9 +9,10 @@ to execute: python -m unittest tests/test_parser.py
 
 import unittest
 
-from src.parser.parser import *
-from src.lexer.scanner import *
 from src.classifier.model import *
+from src.lexer.scanner import *
+from src.parser.parser import *
+
 
 class TestParser(unittest.TestCase):
     
@@ -37,7 +38,7 @@ class TestParser(unittest.TestCase):
          
     # Tests the AND connector, which executes two or more separate commands.
     def test_and(self):
-        #There are three separate commands that will be executed.
+        #There are three separate commands that will be execu0ted.
         text = "open firefox and open kitty and open spotify"   
         parser = self.parser_result(text)
         

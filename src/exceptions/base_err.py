@@ -1,6 +1,7 @@
 import logging
 import sys
 
+
 class OneError(Exception):
     """Base class for exceptions in the One application."""
 

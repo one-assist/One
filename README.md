@@ -1,6 +1,6 @@
 # One
 
-![Python Version](https://img.shields.io/badge/python-3.8%2B-blue)
+![Python Version](https://img.shields.io/badge/python-3.12%2B-blue)
 ![Status](https://img.shields.io/badge/status-active-success)
 
 One is a Python-based voice assistant designed to interpret spoken commands and execute actions on the system. It combines real-time audio processing, speech transcription, intent classification, and a command parser to support practical assistant routines such as opening applications, searching the web, controlling media playback, and managing tasks.
@@ -85,9 +85,9 @@ One/
 
 The project depends on several Python libraries and system tools:
 
-    Python 3.8+
+    Python 3.12+
     sounddevice
-    webrtcvad
+    webrtcvad-wheels
     numpy
     gTTS
     faster-whisper
@@ -95,16 +95,19 @@ The project depends on several Python libraries and system tools:
     scikit-learn
     slint
     symspellpy
-    dotenv
+    python-dotenv
+    google-genai
+    joblib
 
 ## Installation
 ### Prerequisites
 
 Before starting, make sure you have:
 
-  - Python 3.8 or newer installed
+  - Python 3.12 or newer installed
   - A working microphone
-  - A compatible audio backend on the operating system
+  - PortAudio (required by `sounddevice`)
+  - FFmpeg with `ffplay` available on `PATH` (used to play speech audio)
 
 ### 1- Clone the project
 

@@ -6,28 +6,31 @@ Once converted, the text is processed by a Lexer/Parser/AST structure;
 within the AST, it undergoes a conditional check to determine whether it constitutes a valid command.
 """
 
-import logging
+import logging  # noqa: I001
 import queue
 import threading
 
-import sounddevice as sd
-from src.commands.actions import *
 import numpy as np
+import sounddevice as sd
 import webrtcvad
+
+from src.ast.checker import ast_checker
+from src.audio.errors.err_listener import *
+from src.audio.speech import speech, transcribe_audio
+from src.classifier.model import *
+from src.commands.actions import *
 from src.lexer.scanner import *
 from src.parser.parser import *
-from src.ast.checker import ast_checker
-from src.audio.speech import speech, transcribe_audio
-from src.state import state
-from src.classifier.model import *
-from src.config import (
+from src.utils.config import (
     END_SILENCE_FRAMES,
     FRAME_SIZE,
     MIN_AUDIO_FRAMES,
     SAMPLERATE,
     VAD_AGGRESSIVENESS,
 )
-from src.audio.errors.err_listener import *
+from src.utils.state import state
+from src.utils.timing import measure
+
 
 logger = logging.getLogger(__name__)
                          
@@ -35,7 +38,6 @@ logger = logging.getLogger(__name__)
 def start_listerning(event_status: threading.Event):
     vad = webrtcvad.Vad(VAD_AGGRESSIVENESS)
     logger.info("Starting audio listener (device=%s, sample_rate=%s)", sd.default.device, SAMPLERATE)
-    speech("Welcome to One. How can I help you?")
     state.is_sleeping = False
     buffer = []
     is_recording = False
@@ -95,6 +97,7 @@ def start_listerning(event_status: threading.Event):
             blocksize=FRAME_SIZE,
         ):
             logger.info("Audio input stream opened; waiting for the UI to enable listening")
+            speech("Welcome to One. Loading speech recognition.")
             while True:
                 event_status.wait() #Blocks thread execution until event() is true
 
@@ -103,11 +106,18 @@ def start_listerning(event_status: threading.Event):
                 except queue.Empty:
                     continue
 
+                if not event_status.is_set():
+                    logger.debug("Discarded audio because the listener was disabled")
+                    continue
 
                 state.is_processing = True
                 
                 try:
-                    text = transcribe_audio(audio_chunk)
+                    with measure("Transcription"):
+                        #the transcribe audio function
+                        text = transcribe_audio(audio_chunk)
+                    
+                    # execution time info
                     logger.info("Transcription result: %r", text)
         
                     if text:
@@ -120,19 +130,27 @@ def start_listerning(event_status: threading.Event):
                             speech("One is awake.")
     
                         elif not state.is_sleeping:
-                            classifier = Classifier()
-                            intent_object = classifier.get_intent(text)
-                            intent = intent_object.intent
                             
-                            scanner = Scanner(text)
-                            scanner.scan()
-        
-                            parser = Parser(scanner.tokens, intent)
-                            ast_root = parser.parse_command()
-        
-                            if ast_root:
-                                ast_checker(ast_root)
+                            with measure("Classifier"):
                                 
+                                #The tf-idf classifier
+                                classifier = Classifier()
+                                intent_object = classifier.get_intent(text)
+                                intent = intent_object.intent
+                            
+
+                            with measure("Scanner"):
+                                scanner = Scanner(text)
+                                scanner.scan()
+
+                            with measure("Parser"):
+                                parser = Parser(scanner.tokens, intent)
+                                ast_root = parser.parse_command()
+                            
+                            if ast_root:
+                                with measure("AST"):
+                                    ast_checker(ast_root)
+
                 except Exception:
                     logger.exception("Error during audio processing pipeline")
                     speech("An error occurred while processing the audio.")

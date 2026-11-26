@@ -2,8 +2,9 @@
 Where it is defined which words will be tokens.
 """
 
-from enum import StrEnum
 from dataclasses import dataclass
+from enum import StrEnum
+
 
 #the actions tokens
 class TokenType(StrEnum):

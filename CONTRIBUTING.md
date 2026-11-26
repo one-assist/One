@@ -75,7 +75,7 @@ Contributions via pull requests are much appreciated!
 
 ### Requirements
 
-- Python 3.8+
+- Python 3.12+
 - Git
 - A functional microphone
 - `pip` and `venv`

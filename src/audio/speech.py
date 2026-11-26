@@ -1,47 +1,123 @@
+
+
 import contextlib
 import logging
 import os
 import queue
 import subprocess
+import sys
+import threading
 import time
+from pathlib import Path
 
 from faster_whisper import WhisperModel
 from gtts import gTTS
-from src.state import state
+
 from src.audio.errors.err_speech import *
+from src.utils.state import state
+from src.utils.timing import measure
 
 logger = logging.getLogger(__name__)
-model = WhisperModel("base.en", device= "cpu", compute_type= "int8")
+model: WhisperModel | None = None
+_model_lock = threading.Lock()
+_model_loaded = threading.Event()
+_model_loading = False
 
-#Função para voz de resposta a comandos
-def speech(text: str):
-    filename = "speech.mp3"
+
+def preload_model() -> None:
+    """Load Whisper once without blocking the UI thread."""
+    global model, _model_loading
+
+    with _model_lock:
+        if _model_loading or _model_loaded.is_set():
+            return
+        _model_loading = True
 
     try:
-        tts = gTTS(text=text, lang="en")
-        tts.save(filename)
+        with measure("Whisper model preload"):
+            model = WhisperModel("base.en", device="cpu", compute_type="int8")
+        logger.info("Whisper model is ready")
+    except Exception:
+        logger.exception("Unable to load the Whisper model")
+    finally:
+        _model_loaded.set()
 
+
+def model_load_finished() -> bool:
+    """Return whether the preload attempt has completed."""
+    return _model_loaded.is_set()
+
+
+def model_is_ready() -> bool:
+    """Return whether Whisper loaded successfully."""
+    return model is not None
+
+
+def get_model() -> WhisperModel:
+    """Wait for the shared Whisper model, loading it on demand if needed."""
+    if not _model_loaded.is_set():
+        preload_model()
+        _model_loaded.wait()
+
+    if model is None:
+        raise RuntimeError("Whisper model is unavailable")
+
+    return model
+
+# function to synthesize speech from text and play it using ffplay
+def speech(text: str):
+    """Synthesize and play speech with the bundled Piper voice."""
+
+    PIPER_VOICE_DIR = Path(__file__).resolve().parent / "voices"
+    PIPER_MODEL_PATH = PIPER_VOICE_DIR / "en_US-lessac-medium.onnx"
+    PIPER_CONFIG_PATH = PIPER_VOICE_DIR / "en_US-lessac-medium.onnx.json"
+    
+    output_path = Path("speech.wav")
+
+    if not PIPER_MODEL_PATH.is_file() or not PIPER_CONFIG_PATH.is_file():
+        logger.error("Piper voice files are missing from %s", PIPER_VOICE_DIR)
+        return
+
+    try:
         result = subprocess.run(
-            ["ffplay", "-nodisp", "-autoexit", filename],
+            [
+                sys.executable,
+                "-m",
+                "piper",
+                "--model",
+                str(PIPER_MODEL_PATH),
+                "--config",
+                str(PIPER_CONFIG_PATH),
+                "--output-file",
+                str(output_path),
+            ],
+            input=text,
+            text=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+        
+        if result.returncode != 0:
+            logger.error("Piper synthesis failed: %s", result.stderr.strip())
+            return
+
+        playback = subprocess.run(
+            ["ffplay", "-nodisp", "-autoexit", str(output_path)],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.PIPE,
             text=True,
             check=False,
         )
-        if result.returncode != 0:
-            logger.error(
-                "ffplay failed with exit code %s: %s",
-                result.returncode,
-                result.stderr.strip(),
-            )
-    except Exception:
-        logger.exception("Unable to synthesize or play speech")
         
-    finally:
-        if os.path.exists(filename):
-            os.remove(filename)
+        if playback.returncode != 0:
+            logger.error("ffplay failed with exit code %s: %s", playback.returncode, playback.stderr.strip())
 
-    time.sleep(0.4)
+    except OSError:
+        logger.exception("Unable to synthesize or play Piper speech")
+
+    finally:
+        output_path.unlink(missing_ok=True)
 
 def clean_text(text: str) -> str:
     cleaned = text.strip()\
@@ -55,13 +131,13 @@ def clean_text(text: str) -> str:
 
 def transcribe_audio(audio):
     prompts = "close, search, start, gemini, up, down, task, create, view"
-    segments, _ = model.transcribe(
+    segments, _ = get_model().transcribe(
         audio, 
         language="en",
         condition_on_previous_text=False, 
         no_speech_threshold=0.6,         
         vad_filter=True, 
-        beam_size=5, 
+        beam_size=3, 
         temperature=[0.0, 0.2, 0.4, 0.6], 
         compression_ratio_threshold=2.4,  
         log_prob_threshold=-1.0,

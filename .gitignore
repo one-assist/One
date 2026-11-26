@@ -9,3 +9,4 @@ env/
 history.db
 *.db
 src/database/history.db
+.pytest_cache
