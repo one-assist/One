@@ -9,6 +9,7 @@ export component MainWindow inherits Window {
     background: #03080d;
     in-out property <bool> assistant-listening;
     in-out property <bool> assistant-ready: false;
+    in-out property <bool> assistant-speaking: false;
     in-out property <string> assistant-status: "Loading speech recognition...";
     callback start_program();
 
@@ -94,6 +95,7 @@ export component MainWindow inherits Window {
     VoiceOrb {
         ready: root.assistant-ready;
         active: root.assistant-listening;
+        speaking: root.assistant-speaking;
         start_program => {
             root.start_program();
         }

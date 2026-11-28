@@ -78,6 +78,7 @@ def speech(text: str):
         logger.error("Piper voice files are missing from %s", PIPER_VOICE_DIR)
         return
 
+    state.is_speaking = True
     try:
         result = subprocess.run(
             [
@@ -117,6 +118,7 @@ def speech(text: str):
         logger.exception("Unable to synthesize or play Piper speech")
 
     finally:
+        state.is_speaking = False
         output_path.unlink(missing_ok=True)
 
 def clean_text(text: str) -> str:

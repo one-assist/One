@@ -8,6 +8,7 @@ class AppState:
         self.q: queue.Queue[object] = queue.Queue()
         self.is_processing: bool = False
         self.is_sleeping: bool = False
+        self.is_speaking: bool = False
 
 
 state = AppState()

@@ -7,6 +7,7 @@ export component VoiceOrb inherits Rectangle {
     background: transparent;
     callback start_program();
     in property <bool> ready: false;
+    in property <bool> speaking: false;
     in-out property <bool> active: true;
 
     // External wine halo
@@ -25,11 +26,15 @@ export component VoiceOrb inherits Rectangle {
             #03080d00 75%
         );
 
-        opacity: root.active
-            ? 0.78 + 0.22 * abs(
-                sin(animation-tick() / 7ms * 1deg)
+        opacity: root.speaking
+            ? 0.9 + 0.1 * abs(
+                sin(animation-tick() / 3ms * 1deg)
             )
-            : 0.5;
+            : root.active
+                ? 0.78 + 0.22 * abs(
+                    sin(animation-tick() / 7ms * 1deg)
+                )
+                : 0.5;
     }
 
     // Intermediate cyan halo
@@ -65,8 +70,9 @@ export component VoiceOrb inherits Rectangle {
         border-color: #a6414147;
         background: transparent;
 
-        transform-rotation:
-            animation-tick() / 30ms * 1deg;
+        transform-rotation: root.speaking
+            ? animation-tick() / 10ms * 1deg
+            : animation-tick() / 30ms * 1deg;
 
         // Red particle
         Rectangle {
@@ -125,18 +131,27 @@ export component VoiceOrb inherits Rectangle {
             border-radius: 1px;
 
             // Each bar has a different phase
-            height: root.active
-                ? 7px + 21px * abs(
+            height: root.speaking
+                ? 12px + 30px * abs(
                     sin(
                         (
-                            animation-tick() / 8ms
+                            animation-tick() / 3ms
                             + index * 23
                         ) * 1deg
                     )
                 )
-                : 7px + 7px * abs(
-                    sin(index * 31deg)
-                );
+                : root.active
+                    ? 7px + 21px * abs(
+                        sin(
+                            (
+                                animation-tick() / 8ms
+                                + index * 23
+                            ) * 1deg
+                        )
+                    )
+                    : 7px + 7px * abs(
+                        sin(index * 31deg)
+                    );
 
             background: index.mod(4) == 0
                 ? #a64141
@@ -218,7 +233,7 @@ export component VoiceOrb inherits Rectangle {
             border-color: #71d9d9a6;           
 
             drop-shadow-color: #71d9d971;
-            drop-shadow-blur: root.active ? 18px : 10px;
+            drop-shadow-blur: root.speaking ? 30px : root.active ? 18px : 10px;
 
             // Central wavefrom
             HorizontalLayout {
@@ -233,16 +248,25 @@ export component VoiceOrb inherits Rectangle {
                     width: 3px;
                     border-radius: 2px;
 
-                    height: root.active
-                        ? 7px + 22px * abs(
+                    height: root.speaking
+                        ? 10px + 22px * abs(
                             sin(
                                 (
-                                    animation-tick() / 6ms
+                                    animation-tick() / 2ms
                                     + index * 47
                                 ) * 1deg
                             )
                         )
-                        : index == 2
+                        : root.active
+                            ? 7px + 22px * abs(
+                                sin(
+                                    (
+                                        animation-tick() / 6ms
+                                        + index * 47
+                                    ) * 1deg
+                                )
+                            )
+                            : index == 2
                             ? 13px
                             : index == 1 || index == 3
                                 ? 9px

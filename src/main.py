@@ -29,6 +29,7 @@ def main():
     event_status = threading.Event()
     app.assistant_listening = False
     app.assistant_ready = False
+    app.assistant_speaking = False
     app.assistant_status = "Loading speech recognition..."
 
     def switch():
@@ -65,6 +66,9 @@ def main():
             app.assistant_status = "Speech recognition failed to load"
             logger.error("ONE cannot receive commands because Whisper did not load")
 
+    def update_speaking_state():
+        app.assistant_speaking = state.is_speaking
+
     app.start_program = switch
 
     model_loader = threading.Thread(
@@ -87,6 +91,13 @@ def main():
         slint.TimerMode.Repeated,
         timedelta(milliseconds=100),
         update_model_status,
+    )
+
+    speaking_timer = slint.Timer()
+    speaking_timer.start(
+        slint.TimerMode.Repeated,
+        timedelta(milliseconds=50),
+        update_speaking_state,
     )
     app.run()
 
