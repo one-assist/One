@@ -13,9 +13,33 @@ from database.methods import DbMethods, TaskState
 from src.audio.speech import *
 from src.commands.apis import *
 from src.commands.errors.err_actions import *
+from src.utils.state import state
 from src.utils.timing import *
 
 logger = logging.getLogger(__name__)
+
+
+def format_task_rows(rows: list[tuple[object, object, object, object, object]]) -> str:
+    if not rows:
+        return "No tasks found."
+
+    entries: list[str] = []
+    for task_id, name, deadline, status, description in rows:
+        entries.append(
+            f"#{task_id}  {name}\nStatus: {status or 'pending'}\nDeadline: {deadline or 'No deadline'}\n{description or 'No description'}"
+        )
+    return "\n\n".join(entries)
+
+
+def format_history_rows(rows: list[tuple[object, object, object]]) -> str:
+    if not rows:
+        return "No command history found."
+
+    return "\n".join(
+        f"#{history_id}  {intent} — {target or 'No target'}"
+        for history_id, intent, target in rows
+    )
+
 
 class Actions:
     def __init__(self):
@@ -133,7 +157,8 @@ class Actions:
             if result:
                 for row in result:
                     print(row)
-                    
+
+            state.show_panel(f"Task: {task_name}", format_task_rows(result or []))
             history_insert(intent, task_name)
             
         except TaskNotFoundError as error:
@@ -162,6 +187,7 @@ class Actions:
                 for row in result:
                     print(row)
 
+            state.show_panel("Tasks", format_task_rows(result or []))
             history_insert(intent, target)
                         
         except TaskNotFoundError as error:
@@ -236,6 +262,8 @@ class Actions:
                 for row in result:
                     print(row)
 
+            state.show_panel("Command history", format_history_rows(result or []))
+
         except HistoryQueryError as error:
             logger.error("[%s] %s", error.code, error.user_message)
             speech(error.user_message)
@@ -292,8 +320,9 @@ class Actions:
         with measure("Ask Gemini"):
             speech("Thinking")
 
-            response = ask_gemini(target)
+            response = ask_gemini(target) or "Gemini did not return a response."
             print(response)
+            state.show_panel("Gemini", response)
 
         history_insert(intent, target)
 

@@ -31,6 +31,10 @@ def main():
     app.assistant_ready = False
     app.assistant_speaking = False
     app.assistant_status = "Loading speech recognition..."
+    panel_open, panel_title, panel_content = state.panel_snapshot()
+    app.panel_open = panel_open
+    app.panel_title = panel_title
+    app.panel_content = panel_content
 
     def switch():
         """Keep the listener Event and the Slint indicator in the same state."""
@@ -68,8 +72,16 @@ def main():
 
     def update_speaking_state():
         app.assistant_speaking = state.is_speaking
+        panel_open, panel_title, panel_content = state.panel_snapshot()
+        app.panel_open = panel_open
+        app.panel_title = panel_title
+        app.panel_content = panel_content
+
+    def toggle_panel():
+        state.toggle_panel()
 
     app.start_program = switch
+    app.toggle_panel = toggle_panel
 
     model_loader = threading.Thread(
         target=preload_model,
