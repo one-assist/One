@@ -10,3 +10,4 @@ history.db
 *.db
 src/database/history.db
 .pytest_cache
+.ruff_cache

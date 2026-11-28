@@ -5,7 +5,7 @@ The parser is where the distinction is made between elements conveying an intend
 """
 
 from src.classifier.model import *
-from src.lexer.token import Token, TokenType
+from src.lexer.token import Token
 
 
 class CommandExpr:

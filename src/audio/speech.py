@@ -2,16 +2,13 @@
 
 import contextlib
 import logging
-import os
 import queue
 import subprocess
 import sys
 import threading
-import time
 from pathlib import Path
 
 from faster_whisper import WhisperModel
-from gtts import gTTS
 
 from src.audio.errors.err_speech import *
 from src.utils.state import state
