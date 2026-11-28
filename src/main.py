@@ -30,8 +30,8 @@ def main():
     app.assistant_listening = False
     app.assistant_ready = False
     app.assistant_speaking = False
-    app.assistant_status = "Loading speech recognition..."
-    panel_open, panel_title, panel_content = state.panel_snapshot()
+    status_message, panel_open, panel_title, panel_content = state.ui_snapshot()
+    app.assistant_status = status_message
     app.panel_open = panel_open
     app.panel_title = panel_title
     app.panel_content = panel_content
@@ -64,15 +64,16 @@ def main():
         readiness_timer.stop()
         if model_is_ready():
             app.assistant_ready = True
-            app.assistant_status = "ONE is ready"
+            state.set_status("ONE is ready")
             logger.info("ONE is ready to receive commands")
         else:
-            app.assistant_status = "Speech recognition failed to load"
+            state.set_status("Speech recognition failed to load")
             logger.error("ONE cannot receive commands because Whisper did not load")
 
     def update_speaking_state():
         app.assistant_speaking = state.is_speaking
-        panel_open, panel_title, panel_content = state.panel_snapshot()
+        status_message, panel_open, panel_title, panel_content = state.ui_snapshot()
+        app.assistant_status = status_message
         app.panel_open = panel_open
         app.panel_title = panel_title
         app.panel_content = panel_content

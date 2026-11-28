@@ -10,16 +10,19 @@ class TestAppState(unittest.TestCase):
         app_state = AppState()
 
         app_state.show_panel("Tasks", "#1  Write documentation")
-        self.assertEqual(
-            app_state.panel_snapshot(),
-            (True, "Tasks", "#1  Write documentation"),
-        )
+        app_state.show_panel("History", "#2  VIEW_TASKS")
+
+        status, is_open, title, content = app_state.ui_snapshot()
+        self.assertEqual(status, "Loading speech recognition...")
+        self.assertTrue(is_open)
+        self.assertEqual(title, "Session results")
+        self.assertIn("╭─ Tasks", content)
+        self.assertIn("╭─ History", content)
 
         app_state.toggle_panel()
-        self.assertEqual(
-            app_state.panel_snapshot(),
-            (False, "Tasks", "#1  Write documentation"),
-        )
+        _, is_open, _, content_after_close = app_state.ui_snapshot()
+        self.assertFalse(is_open)
+        self.assertEqual(content_after_close, content)
 
 
 if __name__ == "__main__":

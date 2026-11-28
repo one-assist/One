@@ -111,6 +111,7 @@ def start_listerning(event_status: threading.Event):
                     continue
 
                 state.is_processing = True
+                state.set_status("Thinking…")
                 
                 try:
                     with measure("Transcription"):
@@ -123,10 +124,12 @@ def start_listerning(event_status: threading.Event):
                     if text:
                         if text == "sleep":
                             state.is_sleeping = True
+                            state.set_status("ONE is sleeping")
                             speech("One is sleeping.")
     
                         elif text == "wake":
                             state.is_sleeping = False
+                            state.set_status("ONE is awake")
                             speech("One is awake.")
     
                         elif not state.is_sleeping:
@@ -150,6 +153,12 @@ def start_listerning(event_status: threading.Event):
                             if ast_root:
                                 with measure("AST"):
                                     ast_checker(ast_root)
+                                if state.get_status() == "Thinking…":
+                                    state.set_status("Command completed.")
+                            else:
+                                state.set_status("I could not understand that command.")
+                    else:
+                        state.set_status("No speech detected.")
 
                 except Exception:
                     logger.exception("Error during audio processing pipeline")

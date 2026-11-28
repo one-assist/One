@@ -26,17 +26,21 @@ def format_task_rows(rows: list[tuple[object, object, object, object, object]]) 
     entries: list[str] = []
     for task_id, name, deadline, status, description in rows:
         entries.append(
-            f"#{task_id}  {name}\nStatus: {status or 'pending'}\nDeadline: {deadline or 'No deadline'}\n{description or 'No description'}"
+            f"Task #{task_id}\n"
+            f"{name}\n"
+            f"• Status: {status or 'pending'}\n"
+            f"• Deadline: {deadline or 'No deadline'}\n"
+            f"{description or 'No description'}"
         )
-    return "\n\n".join(entries)
+    return "\n\n────────────\n\n".join(entries)
 
 
 def format_history_rows(rows: list[tuple[object, object, object]]) -> str:
     if not rows:
         return "No command history found."
 
-    return "\n".join(
-        f"#{history_id}  {intent} — {target or 'No target'}"
+    return "\n\n".join(
+        f"Entry #{history_id}\n• Command: {intent}\n• Target: {target or 'No target'}"
         for history_id, intent, target in rows
     )
 
@@ -140,6 +144,7 @@ class Actions:
                     break
 
             speech("Task has been updated")
+            state.set_status("Task updated!")
             history_insert(intent, new_name)
             
         else:
@@ -159,6 +164,7 @@ class Actions:
                     print(row)
 
             state.show_panel(f"Task: {task_name}", format_task_rows(result or []))
+            state.set_status("Task loaded")
             history_insert(intent, task_name)
             
         except TaskNotFoundError as error:
@@ -188,6 +194,7 @@ class Actions:
                     print(row)
 
             state.show_panel("Tasks", format_task_rows(result or []))
+            state.set_status("Tasks loaded")
             history_insert(intent, target)
                         
         except TaskNotFoundError as error:
@@ -250,6 +257,7 @@ class Actions:
             
         create_task(name, formated_t, status, description)
         speech(f"Task {name} created.")
+        state.set_status("Task created!")
         history_insert(intent, name)
 
     def view_history(self, intent: str):
@@ -263,6 +271,7 @@ class Actions:
                     print(row)
 
             state.show_panel("Command history", format_history_rows(result or []))
+            state.set_status("History loaded")
 
         except HistoryQueryError as error:
             logger.error("[%s] %s", error.code, error.user_message)
@@ -323,6 +332,7 @@ class Actions:
             response = ask_gemini(target) or "Gemini did not return a response."
             print(response)
             state.show_panel("Gemini", response)
+            state.set_status("Gemini response ready")
 
         history_insert(intent, target)
 
